@@ -1,0 +1,101 @@
+# Production Profile Configuration
+
+spring:
+  # JPA/Hibernate Configuration for Production
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        connection:
+          provider_disables_autocommit: true
+
+  # Database Configuration for Production (AWS RDS)
+  datasource:
+    url: jdbc:postgresql://${AWS_RDS_ENDPOINT}:5432/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+
+  # Redis Configuration for Production (AWS ElastiCache)
+  data:
+    redis:
+      host: ${AWS_REDIS_ENDPOINT}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+      timeout: 60000ms
+      jedis:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 2
+
+# Logging Configuration for Production
+logging:
+  level:
+    com.example.experfolio: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: ${LOG_FILE_PATH:/var/log/experfolio/application.log}
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Security Configuration for Production
+security:
+  require-ssl: true
+  headers:
+    frame-options: DENY
+    content-type-options: nosniff
+    xss-protection: 1; mode=block
+
+# CORS Configuration for Production
+cors:
+  allowed:
+    origins: ${CORS_ALLOWED_ORIGINS}
+
+# File Upload Configuration for Production (AWS S3)
+file:
+  upload:
+    dir: s3://${AWS_S3_BUCKET}/uploads
+    temp: /tmp/experfolio
+    max-size: 10MB
+
+# AWS Configuration for Production
+aws:
+  region: ${AWS_REGION}
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+
+# AI Configuration for Production
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+    timeout: 60000
+    max-retries: 3
+
+claude:
+  api:
+    key: ${CLAUDE_API_KEY}
+    timeout: 60000
+    max-retries: 3
+
+# Vector Database Configuration for Production
+vector:
+  db:
+    url: ${VECTOR_DB_URL}
+    collection:
+      name: ${VECTOR_DB_COLLECTION_NAME}
+    timeout: 60000
+    max-retries: 3

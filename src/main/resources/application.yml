@@ -1,0 +1,52 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: Experfolio
+  
+  # Profile Configuration
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:experfolio}
+    username: ${DB_USERNAME:experfolio}
+    password: ${DB_PASSWORD:experfolio123}
+    driver-class-name: org.postgresql.Driver
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000ms
+  
+  # File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${FILE_UPLOAD_MAX_SIZE:10MB}
+      max-request-size: ${FILE_UPLOAD_MAX_SIZE:10MB}
+  
+  # Jackson Configuration
+  jackson:
+    default-property-inclusion: NON_NULL
+    serialization:
+      write-dates-as-timestamps: false
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:experfolio-jwt-secret-key-for-development-this-key-should-be-changed-in-production-environment}
+  access-token-validity-in-seconds: ${JWT_ACCESS_TOKEN_VALIDITY:1800}
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_TOKEN_VALIDITY:604800}
+
+# API Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method

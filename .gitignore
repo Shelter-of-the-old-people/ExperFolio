@@ -1,0 +1,92 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Environment Variables ###
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+### Experfolio Specific ###
+# File uploads and temp files
+uploads/
+temp/
+test-uploads/
+test-temp/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.tmp
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# AI and Vector DB
+vector-db/
+embeddings/
+*.pkl
+*.joblib
+
+# OCR Data
+tesseract-data/
+*.traineddata
+
+# AWS and Cloud credentials (extra security)
+aws-credentials
+*.pem
+*.key
+*.crt
+
+# Secrets and API keys (extra security)
+secrets/
+api-keys/
+*.secret
+
+### Claude code ###
+CLAUDE.md
+Claude_md_file_update.md

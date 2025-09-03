@@ -1,0 +1,66 @@
+# Development Profile Configuration
+
+spring:
+  # JPA/Hibernate Configuration for Development
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  # Development Security Configuration (Relaxed)
+  security:
+    user:
+      name: admin
+      password: admin
+
+# Logging Configuration for Development
+logging:
+  level:
+    com.example.experfolio: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+
+# CORS Configuration for Development
+cors:
+  allowed:
+    origins: http://localhost:3000,http://localhost:3001,http://localhost:8080
+
+# File Upload Configuration for Development
+file:
+  upload:
+    dir: ./uploads
+    temp: ./temp
+
+# OCR Configuration for Development
+tesseract:
+  data:
+    path: /usr/share/tesseract-ocr/5/tessdata/
+
+# AI Configuration for Development
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    timeout: 30000
+
+claude:
+  api:
+    key: ${CLAUDE_API_KEY:}
+    timeout: 30000
+
+# Vector Database Configuration for Development
+vector:
+  db:
+    url: http://localhost:8000
+    collection:
+      name: experfolio_profiles_dev
+    timeout: 30000
