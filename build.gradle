@@ -38,12 +38,13 @@ dependencies {
     // Swagger/OpenAPI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     
-    // File Upload & Processing
-    implementation 'commons-fileupload:commons-fileupload2-core:2.0.0-M1'
+    // File Upload & Processing (Updated for security)
+    implementation 'commons-fileupload:commons-fileupload2-jakarta-servlet6:2.0.0'
     implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'commons-io:commons-io:2.18.0'
     
-    // OCR (Tesseract)
-    implementation 'net.sourceforge.tess4j:tess4j:5.8.0'
+    // OCR (Tesseract) - Updated for security
+    implementation 'net.sourceforge.tess4j:tess4j:5.16.0'
     
     // PDF Processing
     implementation 'org.apache.pdfbox:pdfbox:3.0.0'

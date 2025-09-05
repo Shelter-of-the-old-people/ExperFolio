@@ -88,5 +88,5 @@ api-keys/
 *.secret
 
 ### Claude code ###
-CLAUDE.md
-Claude_md_file_update.md
+#CLAUDE.md
+#Claude_md_file_update.md
