@@ -1,4 +1,4 @@
-package com.example.experfolio.dto;
+package com.example.experfolio.global.util;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
