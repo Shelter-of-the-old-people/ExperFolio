@@ -24,6 +24,12 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Column(length = 100)
+    private String name;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
@@ -60,9 +66,11 @@ public class User {
     private LocalDateTime deletedAt;
 
     @Builder
-    public User(String email, String password, UserRole role) {
+    public User(String email, String password, String name, String phoneNumber, UserRole role) {
         this.email = email;
         this.password = password;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
         this.role = role;
         this.status = UserStatus.PENDING;
         this.emailVerified = false;
@@ -90,6 +98,19 @@ public class User {
         this.password = newPassword;
         this.passwordResetToken = null;
         this.passwordResetExpires = null;
+    }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updatePhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void updateEmail(String email) {
+        this.email = email;
+        this.emailVerified = false; // 이메일 변경 시 재인증 필요
     }
 
     public void setPasswordResetToken(String token, LocalDateTime expires) {

@@ -46,6 +46,8 @@ public class UserServiceImpl implements UserService {
         User user = User.builder()
                 .email(email)
                 .password(encodedPassword)
+                .name(null) // 회원가입 시에는 이름이 없으므로 null
+                .phoneNumber(null) // 회원가입 시에는 전화번호가 없으므로 null
                 .role(role)
                 .build();
         
@@ -108,9 +110,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void activateUser(UUID userId) {
+    public User activateUser(UUID userId) {
         log.info("사용자 활성화: userId={}", userId);
         updateUserStatus(userId, UserStatus.ACTIVE);
+        return findById(userId).orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
     @Override
@@ -120,9 +123,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void suspendUser(UUID userId) {
+    public User suspendUser(UUID userId) {
         log.info("사용자 일시정지: userId={}", userId);
         updateUserStatus(userId, UserStatus.SUSPENDED);
+        return findById(userId).orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
     @Override
@@ -374,6 +378,83 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
         return user.isEmailVerified();
+    }
+
+    @Override
+    public User updateUserInfo(UUID userId, String name, String phoneNumber) {
+        log.info("사용자 정보 업데이트: userId={}", userId);
+        
+        User user = findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        if (user.isDeleted()) {
+            throw new BadRequestException("삭제된 사용자의 정보를 변경할 수 없습니다");
+        }
+        
+        if (name != null) {
+            user.updateName(name);
+        }
+        if (phoneNumber != null) {
+            user.updatePhoneNumber(phoneNumber);
+        }
+        
+        User updatedUser = userRepository.save(user);
+        log.info("사용자 정보 업데이트 완료: userId={}", userId);
+        
+        return updatedUser;
+    }
+
+    @Override
+    public User updateEmail(UUID userId, String newEmail) {
+        log.info("사용자 이메일 업데이트: userId={}", userId);
+        
+        User user = findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        if (user.isDeleted()) {
+            throw new BadRequestException("삭제된 사용자의 정보를 변경할 수 없습니다");
+        }
+        
+        // 새 이메일 중복 검사
+        if (!newEmail.equals(user.getEmail()) && existsByEmail(newEmail)) {
+            throw new BadRequestException("이미 사용 중인 이메일입니다: " + newEmail);
+        }
+        
+        user.updateEmail(newEmail);
+        
+        // 새로운 이메일 인증 토큰 생성
+        String verificationToken = generateUniqueToken();
+        user.setEmailVerificationToken(verificationToken);
+        
+        User updatedUser = userRepository.save(user);
+        log.info("사용자 이메일 업데이트 완료: userId={}, newEmail={}", userId, newEmail);
+        
+        // TODO: 새 이메일로 인증 메일 발송
+        
+        return updatedUser;
+    }
+
+    @Override
+    public void deleteUser(UUID userId, String password) {
+        log.info("사용자 계정 삭제 요청: userId={}", userId);
+        
+        User user = findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        if (user.isDeleted()) {
+            throw new BadRequestException("이미 삭제된 사용자입니다");
+        }
+        
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BadRequestException("비밀번호가 올바르지 않습니다");
+        }
+        
+        // 소프트 삭제
+        user.softDelete();
+        userRepository.save(user);
+        
+        log.info("사용자 계정 삭제 완료: userId={}", userId);
     }
 
     // 유틸리티 메서드

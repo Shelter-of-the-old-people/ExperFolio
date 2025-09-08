@@ -27,9 +27,9 @@ public interface UserService {
     Optional<User> findByValidPasswordResetToken(String token);
     
     // 사용자 상태 관리
-    void activateUser(UUID userId);
+    User activateUser(UUID userId);
     void deactivateUser(UUID userId);
-    void suspendUser(UUID userId);
+    User suspendUser(UUID userId);
     void updateUserStatus(UUID userId, UserStatus status);
     
     // 이메일 인증
@@ -50,6 +50,9 @@ public interface UserService {
     
     // 사용자 정보 업데이트
     User updateUser(User user);
+    User updateUserInfo(UUID userId, String name, String phoneNumber);
+    User updateEmail(UUID userId, String newEmail);
+    void deleteUser(UUID userId, String password);
     void softDeleteUser(UUID userId);
     
     // 사용자 목록 조회

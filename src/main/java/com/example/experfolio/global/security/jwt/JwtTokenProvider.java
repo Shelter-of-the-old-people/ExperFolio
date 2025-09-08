@@ -219,11 +219,16 @@ public class JwtTokenProvider {
 
     // 토큰 정보를 담은 DTO 생성
     public JwtTokenInfo createTokenInfo(String accessToken, String refreshToken) {
+        LocalDateTime accessTokenExpiresAt = getExpirationTime(accessToken);
+        LocalDateTime refreshTokenExpiresAt = getExpirationTime(refreshToken);
+        
         return JwtTokenInfo.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .expiresIn(accessTokenValidityInMilliseconds / 1000)
+                .accessTokenExpiresAt(accessTokenExpiresAt)
+                .refreshTokenExpiresAt(refreshTokenExpiresAt)
                 .build();
     }
 }
