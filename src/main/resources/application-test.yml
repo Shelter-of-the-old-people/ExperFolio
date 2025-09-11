@@ -1,0 +1,69 @@
+# Test Profile Configuration
+
+spring:
+  # Database Configuration for Tests (H2 In-Memory)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+
+  # H2 Console for Tests
+  h2:
+    console:
+      enabled: true
+
+  # JPA/Hibernate Configuration for Tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # Redis Configuration for Tests (Embedded)
+  data:
+    redis:
+      port: 0  # Use random port for embedded redis
+
+# Logging Configuration for Tests
+logging:
+  level:
+    com.example.experfolio: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# JWT Configuration for Tests (Short expiration)
+jwt:
+  secret: test-secret-key-for-unit-tests-only-do-not-use-in-production-environment
+  access-token-validity-in-seconds: 300  # 5 minutes
+  refresh-token-validity-in-seconds: 1800  # 30 minutes
+
+# File Upload Configuration for Tests
+file:
+  upload:
+    dir: ./test-uploads
+    temp: ./test-temp
+
+# Mock AI Configuration for Tests
+openai:
+  api:
+    key: test-key
+    timeout: 5000
+
+claude:
+  api:
+    key: test-key
+    timeout: 5000
+
+# Mock Vector Database Configuration for Tests
+vector:
+  db:
+    url: http://localhost:8080/mock-vector-db
+    collection:
+      name: test_profiles
+    timeout: 5000
