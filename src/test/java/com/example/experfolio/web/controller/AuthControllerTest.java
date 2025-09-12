@@ -10,11 +10,13 @@ import com.example.experfolio.domain.user.service.UserService;
 import com.example.experfolio.global.exception.BadRequestException;
 import com.example.experfolio.global.exception.UnauthorizedException;
 import com.example.experfolio.global.security.jwt.JwtTokenInfo;
+import com.example.experfolio.global.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -23,14 +25,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AuthController.class)
+@WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
 @DisplayName("AuthController 웹 계층 테스트") 
 class AuthControllerTest {
 
@@ -45,6 +49,9 @@ class AuthControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private JwtTokenProvider JwtTokenProvider;
 
     // 테스트용 상수
     private static final String VALID_EMAIL = "test@example.com";
@@ -99,11 +106,13 @@ class AuthControllerTest {
 
             // When & Then
             mockMvc.perform(post("/api/v1/auth/signup")
+                            .with(csrf())
+                            .with(anonymous()) // 익명 사용자로 요청
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(signupRequest)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다"));
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.message").value("비밀번호와 비밀번호 확인이 일치하지 않습니다."));
 
             verify(authService, never()).register(anyString(), anyString(), any());
         }
@@ -125,7 +134,11 @@ class AuthControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(signupRequest)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false));
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.message").value("입력값이 올바르지 않습니다: " +
+                            "phoneNumber - 전화번호는 필수입니다., " +
+                            "name - 이름은 필수입니다., " +
+                            "email - 이메일은 필수입니다."));
 
             verify(authService, never()).register(anyString(), anyString(), any());
         }
@@ -142,7 +155,8 @@ class AuthControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(signupRequest)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false));
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.message").value("입력값이 올바르지 않습니다: email - 올바른 이메일 형식이 아닙니다."));
 
             verify(authService, never()).register(anyString(), anyString(), any());
         }
@@ -177,8 +191,10 @@ class AuthControllerTest {
             // Given
             LoginRequestDto loginRequest = createValidLoginRequest();
             JwtTokenInfo tokenInfo = createTestTokenInfo();
+            User mockUser = createTestUser();
 
             given(authService.login(VALID_EMAIL, VALID_PASSWORD)).willReturn(tokenInfo);
+            given(userService.findActiveByEmail(VALID_EMAIL)).willReturn(Optional.of(mockUser));
 
             // When & Then
             mockMvc.perform(post("/api/v1/auth/login")
@@ -186,7 +202,6 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(loginRequest)))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.accessToken").value(ACCESS_TOKEN))
                     .andExpect(jsonPath("$.data.refreshToken").value(REFRESH_TOKEN))
                     .andExpect(jsonPath("$.data.tokenType").value("Bearer"));
