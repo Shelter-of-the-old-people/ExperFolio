@@ -1,7 +1,9 @@
 # 추가적으로 업데이트할 사항
 
-- swagger를 통한 api 명세
+- Swagger를 통한 API 명세
 - 환경 변수 .env 파일 생성
+- MongoDB 연결 및 인덱싱 설정
+- 하이브리드 데이터베이스 구성 관리
 
 ## 제약사항 소개 (간략)
 
@@ -11,173 +13,204 @@
 
 ### 백엔드 기술스택
 
-- Spring boot
-- JPA
+- Spring Boot
+- JPA (PostgreSQL)
+- Spring Data MongoDB
 - AWS + Docker
 
 ## 데이터베이스
-- PostgreSQL
-- Redis
+- **PostgreSQL**: 사용자 관리, 인증, 회사 정보
+- **MongoDB**: 포트폴리오 데이터, 검색, AI 임베딩
+- **Redis**: 캐싱, 세션
 
---- 
+---
 
 ## 간략한 예상 flow
 
-### 채용담당자
+### 채용담당자 (MongoDB 기반 업데이트)
 1. 검색화면 - 프롬프트 입력
-2. LLM - 프롬프트 입력 받고
-3. RAG - 프롬프트 임베딩
-4. RAG (리트리버) - 프롬프트와 유사한 데이터 가져옴
-5. LLM - 프롬프트 + 리트리버 결과
-6. 검색 결과 화면 - 프롬프트 결과
+2. LLM - 프롬프트 입력 받고 의도 파악
+3. MongoDB Search - 텍스트 검색 + 집계 파이프라인
+4. RAG (리트리버) - MongoDB에서 관련 포트폴리오 문서 검색
+5. Vector Search - 의미적 유사도 검색 (MongoDB Atlas Vector Search)
+6. LLM - 프롬프트 + MongoDB 검색 결과 조합
+7. 검색 결과 화면 - 랭킹된 후보자 목록과 관련성 점수
 
-### 구직자(학생)
-1. 정보 입력 페이지  - 자료 입력
-2. 백 - RAG로 데이터 전달
-3. RAG - 데이터 전처리
-4. RAG - 임베딩 데이터 벡터 데이터 베이스에 저장
+### 구직자(학생) (MongoDB 기반 업데이트)
+1. 정보 입력 페이지 - 포트폴리오 자료 입력
+2. 백엔드 - 데이터 검증 및 구조화
+3. MongoDB - 유연한 스키마로 포트폴리오 문서 저장
+4. 인덱싱 - 텍스트 검색 및 벡터 인덱스 자동 생성
+5. RAG - 포트폴리오 내용 임베딩 및 벡터 저장
+6. 검색 최적화 - 향후 검색을 위한 메타데이터 태깅
 
 --- 
 
 # 수정사항 반영 내역
 
-## CLAUDE.md 파일 2차 업데이트 완료
+## CLAUDE.md 파일 3차 업데이트 완료 (MongoDB 하이브리드 아키텍처 반영)
 
 ### 주요 변경 사항
 
-1. **기술 스택 섹션 대폭 확장**
-   - 백엔드 프레임워크: Spring Boot, Spring Data JPA, Spring Security
-   - 데이터베이스: PostgreSQL (주 데이터베이스), Redis (캐싱 및 세션 관리)
-   - 인프라: AWS, Docker 컨테이너화
-   - API 문서화: Swagger/OpenAPI 추가
+1. **하이브리드 데이터베이스 아키텍처 도입**
+   - **PostgreSQL**: 사용자 관리, 인증, 회사 정보 (관계형 데이터)
+   - **MongoDB**: 포트폴리오 데이터, 검색 인덱싱, AI/RAG 벡터 데이터
+   - **Redis**: 캐싱, 세션 관리, 성능 최적화
+   - Spring Data JPA + Spring Data MongoDB 병행 사용
 
-2. **빌드 및 개발 명령어 확장**
-   - Swagger UI 접근 방법 추가 (`/swagger-ui.html`)
-   - 환경변수 설정 가이드 (.env 파일)
-   - 프로파일 기반 설정 관리
+2. **MongoDB 통합 기술 스택**
+   - Spring Data MongoDB: NoSQL 데이터 접근
+   - MongoDB Atlas Vector Search: AI 유사도 검색
+   - MongoDB Text Search: 전문 검색 엔진
+   - MongoDB Aggregation Pipeline: 복합 검색 쿼리
 
-3. **사용자 역할 제약사항 섹션 신설**
-   - 구직자와 채용담당자 기능의 완전한 분리
-   - 역할별 접근 권한 엄격 관리
-   - API 및 UI 레벨에서의 권한 관리
+3. **프로젝트 구조 업데이트**
+   - **Domain 계층**: User (PostgreSQL) + Portfolio (MongoDB) 분리
+   - **Document 모델링**: 유연한 스키마로 포트폴리오 구조 설계
+   - **하이브리드 Repository**: JPA + MongoDB Repository 병행
+   - **Migration Strategy**: PostgreSQL → MongoDB 단계적 이관
 
-4. **애플리케이션 플로우 섹션 추가**
-   - **채용담당자 워크플로우**: 검색 인터페이스 → LLM 처리 → RAG 임베딩 → 유사도 검색 → LLM 생성 → 결과 표시
-   - **구직자 워크플로우**: 프로필 입력 → 데이터 처리 → 전처리 → 벡터 저장
+4. **AI/검색 시스템 고도화**
+   - **MongoDB Vector Search**: 의미적 유사도 검색
+   - **Text + Vector 하이브리드**: 키워드 + 벡터 결합 검색
+   - **Aggregation Pipeline**: 복합 필터링 및 통계
+   - **Index Optimization**: 검색 성능 최적화
 
-5. **개발 우선순위 섹션 신설**
-   - **즉시 작업**: .env 파일 설정, Swagger 구현, DB 연결, Docker 설정, JWT 인증
-   - **핵심 구현**: 역할 기반 접근 제어, RAG 시스템, OCR 처리, 벡터 DB, AWS 배포
+5. **개발 단계 재구성**
+   - **Phase 3.2**: MongoDB Migration (현재 진행 중)
+   - **Document Structure**: Portfolio, PersonalInfo, Education, Experience
+   - **Search Indexing**: 텍스트, 복합, 벡터 인덱스 설계
+   - **Migration Tools**: 데이터 이관 도구 개발
 
-6. **설정 파일 가이드 확장**
-   - 환경변수 (.env) 설정 가이드 추가
-   - AWS 및 Docker 배포 설정 포함
-   - PostgreSQL과 Redis 연결 설정 상세화
+6. **실제 구현 상태 반영**
+   - ✅ PostgreSQL 기반 사용자 관리 시스템 완료
+   - ✅ JWT 인증, Security, API 문서화 완료
+   - 🔄 MongoDB 포트폴리오 시스템 구현 중
+   - 🔄 하이브리드 검색 엔진 개발 중
 
 ### 반영된 추가 요구사항
-- Swagger를 통한 API 명세 관리
-- 환경변수 .env 파일 생성 가이드
-- PostgreSQL + Redis 데이터베이스 구성
-- AWS + Docker 인프라 구성
-- 사용자 역할별 완전한 기능 분리
-- LLM & RAG 기반 검색 플로우 상세 설명
+- MongoDB 연결 및 인덱싱 설정
+- 하이브리드 데이터베이스 구성 관리
+- MongoDB Document 모델링 가이드
+- Vector Search 통합 계획
+- Dual Database Migration 전략
 
 ---
 
-# 개발 계획
+# 개발 계획 (MongoDB 하이브리드 아키텍처 기반)
 
-## Phase 1: 프로젝트 기반 설정 및 환경 구축 (1-2주)
+## Phase 1: 프로젝트 기반 설정 및 환경 구축 ✅ 완료
 
-### 1.1 개발 환경 설정
-- [ ] `.env` 파일 생성 및 환경변수 설정
-- [ ] `application.properties` 또는 `application.yml` 설정
-- [ ] PostgreSQL 데이터베이스 연결 설정
-- [ ] Redis 캐시 서버 연결 설정
-- [ ] Docker 설정 파일 작성 (`Dockerfile`, `docker-compose.yml`)
+### 1.1 개발 환경 설정 ✅
+- [x] `.env` 파일 생성 및 환경변수 설정
+- [x] `application.properties` 설정 (dev/prod/test 프로파일)
+- [x] PostgreSQL 데이터베이스 연결 설정
+- [x] Redis 캐시 서버 연결 설정
+- [x] Docker 설정 파일 작성 (`Dockerfile`, `docker-compose.yml`)
 
-### 1.2 기본 의존성 및 설정
-- [ ] `build.gradle`에 필요한 의존성 추가:
-  - Spring Security, JWT
+### 1.2 기본 의존성 및 설정 ✅
+- [x] `build.gradle`에 필요한 의존성 추가:
+  - Spring Security, JWT (JJWT 0.12.6)
   - Spring Data JPA, PostgreSQL Driver
   - Redis, Swagger/OpenAPI
-  - 파일 업로드 관련 라이브러리
-- [ ] Swagger 설정 및 API 문서화 기본 구조
-- [ ] 기본 패키지 구조 생성
+  - 파일 업로드 관련 라이브러리 (CVE 취약점 해결)
+- [x] Swagger 설정 및 API 문서화 기본 구조
+- [x] 기본 패키지 구조 생성
 
-## Phase 2: 사용자 관리 및 인증 시스템 (2-3주)
+## Phase 2: 사용자 관리 및 인증 시스템 ✅ 완료
 
-### 2.1 사용자 엔티티 및 데이터베이스 설계
-- [ ] User 엔티티 설계 (구직자/채용담당자 역할 구분)
-- [ ] 데이터베이스 테이블 설계 및 생성
-- [ ] JPA Repository 구현
+### 2.1 사용자 엔티티 및 데이터베이스 설계 ✅
+- [x] User 엔티티 설계 (구직자/채용담당자 역할 구분)
+- [x] PostgreSQL 데이터베이스 테이블 설계 및 DDL 생성
+- [x] JPA Repository 구현 (한국어 주석)
 
-### 2.2 JWT 인증 시스템
-- [ ] JWT 토큰 생성 및 검증 유틸리티 클래스
-- [ ] Spring Security 설정
-- [ ] 로그인/회원가입 API 구현
-- [ ] 역할별 접근 권한 설정 (Role-based Access Control)
+### 2.2 JWT 인증 시스템 ✅
+- [x] JWT 토큰 생성 및 검증 유틸리티 클래스
+- [x] Spring Security 설정 (CORS, CSRF, 예외 처리)
+- [x] 로그인/회원가입 API 구현
+- [x] 역할별 접근 권한 설정 (Role-based Access Control)
 
-### 2.3 사용자 관리 API
-- [ ] 회원가입 API (구직자/채용담당자)
-- [ ] 로그인/로그아웃 API
-- [ ] 사용자 정보 조회/수정 API
-- [ ] 비밀번호 변경 API
+### 2.3 사용자 관리 API ✅
+- [x] 회원가입 API (구직자/채용담당자)
+- [x] 로그인/로그아웃 API
+- [x] 사용자 정보 조회/수정 API
+- [x] 비밀번호 변경 API
 
-## Phase 3: 구직자 기능 구현 (3-4주)
+## Phase 3: MongoDB 통합 포트폴리오 시스템 🔄 진행 중
 
-### 3.1 포트폴리오 데이터 모델링
-- [ ] Portfolio 엔티티 설계
-- [ ] 개인정보, 학력, 경력, 기술스택, 자격증 엔티티 설계
-- [ ] 엔티티 간 관계 설정 (OneToMany, ManyToMany 등)
+### 3.1 MongoDB 설정 및 연결 🔄
+- [ ] Spring Data MongoDB 의존성 추가 및 설정
+- [ ] MongoDB 연결 설정 (로컬 + Atlas 클라우드)
+- [ ] 하이브리드 데이터베이스 설정 (PostgreSQL + MongoDB)
+- [ ] MongoDB 인덱스 설계 및 생성
 
-### 3.2 포트폴리오 CRUD API
-- [ ] 포트폴리오 생성/수정/삭제 API
+### 3.2 포트폴리오 Document 모델링 🔄
+- [ ] Portfolio Document 구조 설계 (메인 문서)
+- [ ] PersonalInfo, Education, Experience 임베디드 문서
+- [ ] TechStack, Certification, Project 임베디드 문서
+- [ ] VectorEmbedding 필드 (AI 벡터 저장)
+
+### 3.3 MongoDB Repository 구현 🔄
+- [ ] PortfolioRepository (Spring Data MongoDB)
+- [ ] PortfolioSearchRepository (Aggregation Pipeline)
+- [ ] 복합 검색 쿼리 구현 (텍스트 + 필터)
+- [ ] MongoDB GridFS (파일 저장용)
+
+### 3.4 포트폴리오 CRUD API 🔄
+- [ ] 포트폴리오 생성/수정/삭제 API (MongoDB 기반)
 - [ ] 개인정보 관리 API
-- [ ] 학력/경력 정보 관리 API
-- [ ] 기술스택 관리 API
-- [ ] 자격증 관리 API
 
-### 3.3 파일 업로드 및 OCR 처리
-- [ ] 파일 업로드 API (PDF, 이미지)
-- [ ] OCR 라이브러리 연동 (Tesseract 또는 클라우드 OCR)
-- [ ] PDF 텍스트 추출 기능
-- [ ] 추출된 텍스트 파싱 및 포트폴리오 자동 입력
+### 3.5 데이터 마이그레이션 도구 🔄
+- [ ] PostgreSQL → MongoDB 마이그레이션 서비스
+- [ ] 기존 데이터 변환 및 검증 도구
+- [ ] Dual Write 시스템 (양쪽 DB 동시 쓰기)
+- [ ] 데이터 일관성 체크 도구
 
-## Phase 4: AI/RAG 시스템 구현 (4-5주)
+## Phase 4: MongoDB 기반 AI/RAG 시스템 구현
 
-### 4.1 벡터 데이터베이스 설정
-- [ ] 벡터 데이터베이스 선택 및 설정 (ChromaDB, Pinecone 등)
-- [ ] 임베딩 모델 선택 및 연동
-- [ ] 벡터 저장 및 검색 유틸리티 클래스
+### 4.1 MongoDB Vector Search 설정
+- [ ] MongoDB Atlas Vector Search 설정
+- [ ] 벡터 인덱스 생성 (768차원 임베딩)
+- [ ] 임베딩 모델 선택 및 연동 (OpenAI, HuggingFace)
+- [ ] MongoDB 벡터 저장 및 검색 유틸리티
 
-### 4.2 RAG 시스템 구현
-- [ ] 텍스트 전처리 서비스
-- [ ] 임베딩 생성 서비스
-- [ ] 유사도 검색 서비스
-- [ ] LLM 연동 (OpenAI API, Anthropic Claude 등)
+### 4.2 하이브리드 검색 시스템
+- [ ] MongoDB Text Search + Vector Search 결합
+- [ ] Aggregation Pipeline 복합 검색 쿼리
+- [ ] 검색 결과 스코어링 및 가중치 조정
+- [ ] 실시간 검색 성능 최적화
 
-### 4.3 구직자 데이터 벡터화
-- [ ] 포트폴리오 데이터 임베딩 생성
-- [ ] 벡터 데이터베이스 저장
-- [ ] 실시간 업데이트 시스템
+### 4.3 RAG 시스템 구현
+- [ ] 포트폴리오 문서 전처리 서비스
+- [ ] MongoDB 문서 검색 (Retriever)
+- [ ] LLM 연동 (OpenAI API, Anthropic Claude)
+- [ ] 프롬프트 엔지니어링 및 응답 생성
 
-## Phase 5: 채용담당자 검색 기능 구현 (3-4주)
+### 4.4 포트폴리오 벡터화 자동화
+- [ ] 포트폴리오 저장 시 자동 임베딩 생성
+- [ ] MongoDB 벡터 필드 업데이트
+- [ ] 백그라운드 벡터 인덱싱 작업
+- [ ] 벡터 데이터 품질 관리
 
-### 5.1 검색 API 개발
-- [ ] 자연어 검색 쿼리 처리
-- [ ] RAG 기반 의미적 검색
-- [ ] 필터링 기능 (기술스택, 경력, 직무)
-- [ ] 검색 결과 스코어링 및 정렬
+## Phase 5: 채용담당자 검색 기능 구현
 
-### 5.2 구직자 정보 조회
+### 5.1 MongoDB 기반 검색 API
+- [ ] 자연어 검색 쿼리 처리 API
+- [ ] MongoDB Aggregation 복합 검색
+- [ ] 텍스트 + 벡터 하이브리드 검색
+- [ ] 검색 결과 랭킹 및 정렬
+
+### 5.2 고급 필터링 시스템
+- [ ] MongoDB 필터링 (기술스택, 경력, 위치)
+- [ ] 복합 조건 검색 (Aggregation Pipeline)
+- [ ] 검색 성능 최적화 (인덱스 활용)
+- [ ] 검색 결과 캐싱 (Redis)
+
+### 5.3 구직자 정보 조회
 - [ ] 제한적 정보 표시 API (개인정보 보호)
+- [ ] MongoDB 문서 필드 마스킹
 - [ ] 상세 프로필 조회 API
 - [ ] 연락하기 기능 API
-
-### 5.3 즐겨찾기 및 연락 관리
-- [ ] 즐겨찾기 추가/삭제 API
-- [ ] 연락 요청 관리 시스템
-- [ ] 연락 기록 관리
 
 ## Phase 6: 프론트엔드 연동 및 UI 구현 (병렬 작업, 각 Phase와 함께)
 
@@ -225,16 +258,30 @@
 - [ ] AI 모델 응답 시간 최적화
 - [ ] 전체 시스템 성능 튜닝
 
-## 예상 총 개발 기간: 약 3-4개월
+## 예상 총 개발 기간: 약 3-4개월 (MongoDB 마이그레이션 포함)
 
-### 우선순위별 개발 순서
-1. **High Priority**: Phase 1-3 (기본 인프라 + 사용자 관리 + 구직자 기능)
-2. **Medium Priority**: Phase 4-5 (AI/RAG + 검색 기능)
+### 우선순위별 개발 순서 (업데이트)
+1. **High Priority**: ✅ Phase 1-2 완료 + 🔄 Phase 3 (MongoDB 통합)
+2. **Medium Priority**: Phase 4-5 (MongoDB 기반 AI/RAG + 하이브리드 검색)
 3. **Low Priority**: Phase 6-8 (UI + 배포 + 최적화)
 
-### 주요 기술적 도전 과제
-- RAG 시스템의 정확도 및 성능 최적화
-- 대용량 벡터 데이터 처리
-- 실시간 검색 성능
-- 개인정보 보호 및 보안
-- AI 모델 비용 최적화
+### 현재 진행 상황
+- ✅ **완료됨**: 기본 인프라, 사용자 관리, JWT 인증, PostgreSQL 설정
+- 🔄 **진행 중**: MongoDB 통합, 포트폴리오 시스템, Document 모델링
+- 📋 **예정**: AI/RAG 시스템, 하이브리드 검색 엔진
+
+### 주요 기술적 도전 과제 (MongoDB 기반)
+- **하이브리드 DB 아키텍처**: PostgreSQL + MongoDB 동시 관리
+- **MongoDB Vector Search**: 768차원 벡터 인덱싱 및 검색 성능
+- **Text + Vector 하이브리드**: 키워드 검색과 의미적 검색 결합
+- **데이터 마이그레이션**: 기존 데이터의 안전한 MongoDB 이관
+- **Aggregation Pipeline**: 복합 검색 쿼리 최적화
+- **개인정보 보호**: MongoDB 문서 레벨 필드 마스킹
+- **AI 모델 비용**: 벡터 임베딩 및 LLM API 비용 최적화
+
+### MongoDB 도입으로 인한 추가 이점
+- **유연한 스키마**: 다양한 포트폴리오 형태 지원
+- **강력한 검색**: Text Search + Aggregation + Vector Search
+- **확장성**: 대용량 포트폴리오 데이터 처리
+- **AI 통합**: 벡터 데이터 네이티브 지원
+- **성능**: 인덱스 최적화를 통한 빠른 검색
