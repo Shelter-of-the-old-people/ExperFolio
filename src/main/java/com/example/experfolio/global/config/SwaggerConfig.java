@@ -23,11 +23,11 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
+                .openapi("3.0.3")
                 .info(apiInfo())
-//                .servers(List.of(
-//                        new Server().url("http://localhost:" + serverPort).description("Local Development Server"),
-//                        new Server().url("https://api.experfolio.com").description("Production Server")
-//                ))
+                .servers(List.of(
+                        new Server().url("http://localhost:" + serverPort).description("Local Development Server")
+                ))
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication",

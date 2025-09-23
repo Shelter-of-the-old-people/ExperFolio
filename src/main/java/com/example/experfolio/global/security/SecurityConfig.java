@@ -70,8 +70,12 @@ public class SecurityConfig {
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()
+                .requestMatchers("/api-docs").permitAll()
                 .requestMatchers("/api-docs/**").permitAll()
+                .requestMatchers("/v3/api-docs").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-resources/**").permitAll()
+                .requestMatchers("/webjars/**").permitAll()
                 
                 // 정적 리소스
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
