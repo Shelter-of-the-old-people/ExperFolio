@@ -223,21 +223,4 @@ public class AuthService {
         
         return jwtTokenProvider.getUserEmail(accessToken);
     }
-
-    // 계정 잠금/해제 (관리자 기능)
-    public void lockAccount(UUID userId) {
-        log.info("계정 잠금: userId={}", userId);
-        
-        userService.suspendUser(userId);
-        
-        log.info("계정 잠금 완료: userId={}", userId);
-    }
-
-    public void unlockAccount(UUID userId) {
-        log.info("계정 잠금 해제: userId={}", userId);
-        
-        userService.activateUser(userId);
-        
-        log.info("계정 잠금 해제 완료: userId={}", userId);
-    }
 }

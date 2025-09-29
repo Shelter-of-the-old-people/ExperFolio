@@ -27,6 +27,10 @@ spring:
   data:
     redis:
       port: 0  # Use random port for embedded redis
+    # MongoDB Configuration for Tests (Embedded)
+    mongodb:
+      uri: mongodb://localhost:27017/experfolio_test
+      database: experfolio_test
 
 # Logging Configuration for Tests
 logging:
