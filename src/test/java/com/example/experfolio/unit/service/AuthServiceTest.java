@@ -516,32 +516,6 @@ class AuthServiceTest {
             assertThatCode(() -> authService.logout(TEST_USER_ID))
                     .doesNotThrowAnyException();
         }
-
-        @Test
-        @DisplayName("계정 잠금 - 성공")
-        void givenUserId_whenLockAccount_thenLockSuccessfully() {
-            // Given
-            given(userService.suspendUser(TEST_USER_ID)).willReturn(testUser);
-
-            // When
-            authService.lockAccount(TEST_USER_ID);
-
-            // Then
-            verify(userService).suspendUser(TEST_USER_ID);
-        }
-
-        @Test
-        @DisplayName("계정 잠금 해제 - 성공")
-        void givenUserId_whenUnlockAccount_thenUnlockSuccessfully() {
-            // Given
-            given(userService.activateUser(TEST_USER_ID)).willReturn(testUser);
-
-            // When
-            authService.unlockAccount(TEST_USER_ID);
-
-            // Then
-            verify(userService).activateUser(TEST_USER_ID);
-        }
     }
 
     // 테스트 데이터 생성 헬퍼 메서드

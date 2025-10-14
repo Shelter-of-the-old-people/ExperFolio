@@ -76,10 +76,7 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-resources/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
-                
-                // 정적 리소스
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                
+
                 // 구직자 전용 API
                 .requestMatchers("/api/v1/job-seekers/**").hasRole("JOB_SEEKER")
                 

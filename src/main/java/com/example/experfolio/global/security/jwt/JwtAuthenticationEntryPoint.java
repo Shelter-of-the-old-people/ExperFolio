@@ -30,7 +30,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         Map<String, Object> data = new HashMap<>();
         data.put("status", HttpServletResponse.SC_UNAUTHORIZED);
         data.put("error", "Unauthorized");
-        data.put("message", "인증이 필요합니다.");
+        data.put("message", "");
         data.put("path", request.getRequestURI());
         
         response.getOutputStream().println(objectMapper.writeValueAsString(data));
