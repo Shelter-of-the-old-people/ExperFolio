@@ -5,7 +5,8 @@
       "Bash(./gradlew build:*)",
       "Bash(./gradlew:*)",
       "Bash(mkdir:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git merge feature-ydg -m \"$(cat <<''EOF''\nMerge branch ''feature-ydg'' into main: Portfolio service implementation\n\n- Remove @PreAuthorize annotations from PortfolioController\n- Implement Portfolio DTOs (BasicInfoDto, PortfolioItemDto, PortfolioResponseDto)\n- Create PortfolioRepository with MongoDB operations\n- Complete PortfolioService with all use case implementations\n- Add comprehensive service layer for portfolio management\n- Include file upload support structure\n- Prepare for FileStorageService and AI server integration\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
