@@ -24,11 +24,10 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
-    @Value("${file.upload.dir:/var/data/experfolio/uploads}")
+    @Value("${file.upload.dir:uploads}")
     private String uploadDir;
 
-    @Value("${file.upload.max-size:10485760}") // 10MB
-    private long maxFileSize;
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of(
             "jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "txt"
@@ -151,9 +150,9 @@ public class FileStorageService {
         }
 
         // 파일 크기 확인
-        if (file.getSize() > maxFileSize) {
+        if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException(
-                    String.format("파일 크기가 너무 큽니다. 최대 크기: %dMB", maxFileSize / (1024 * 1024))
+                    String.format("파일 크기가 너무 큽니다. 최대 크기: %dMB", MAX_FILE_SIZE / (1024 * 1024))
             );
         }
 
