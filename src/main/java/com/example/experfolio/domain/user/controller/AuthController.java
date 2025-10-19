@@ -65,7 +65,7 @@ public class AuthController {
         // 응답 DTO 생성
         UserInfoResponseDto responseDto = convertToUserInfoResponse(user);
         
-        return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다. 이메일 인증을 진행해주세요.", responseDto));
+        return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다.", responseDto));
     }
 
     /**
@@ -147,46 +147,6 @@ public class AuthController {
         authService.logout(userId);
         
         return ResponseEntity.ok(ApiResponse.success("로그아웃이 완료되었습니다.", null));
-    }
-
-    /**
-     * 이메일 인증
-     */
-    @PostMapping("/verify-email")
-    @Operation(summary = "이메일 인증", description = "이메일 인증 토큰을 사용하여 이메일을 인증합니다.")
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "이메일 인증 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 토큰")
-    })
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(
-            @Parameter(description = "이메일 인증 토큰", required = true)
-            @RequestParam("token") String token) {
-        
-        log.info("이메일 인증 요청: token={}", token);
-        
-        authService.verifyEmail(token);
-        
-        return ResponseEntity.ok(ApiResponse.success("이메일 인증이 완료되었습니다.", null));
-    }
-
-    /**
-     * 이메일 인증 재전송
-     */
-    @PostMapping("/resend-verification")
-    @Operation(summary = "이메일 인증 재전송", description = "이메일 인증 토큰을 재전송합니다.")
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "이메일 재전송 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    public ResponseEntity<ApiResponse<Void>> resendEmailVerification(
-            @Parameter(description = "이메일 주소", required = true)
-            @RequestParam("email") String email) {
-        
-        log.info("이메일 인증 재전송 요청: email={}", email);
-        
-        authService.resendEmailVerification(email);
-        
-        return ResponseEntity.ok(ApiResponse.success("인증 이메일이 재전송되었습니다.", null));
     }
 
     /**
@@ -276,8 +236,6 @@ public class AuthController {
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
-                .status(user.getStatus())
-                .emailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .lastLoginAt(user.getLastLoginAt())
@@ -295,8 +253,6 @@ public class AuthController {
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
-                .status(user.getStatus())
-                .emailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .lastLoginAt(user.getLastLoginAt())
                 .build();
@@ -307,24 +263,23 @@ public class AuthController {
      */
     private Integer calculateProfileCompletionRate(User user) {
         int completedFields = 0;
-        int totalFields = 5; // 이메일, 이름, 전화번호, 이메일인증, 역할별 프로필
-        
+        int totalFields = 4; // 이메일, 이름, 전화번호, 역할별 프로필
+
         if (user.getEmail() != null) completedFields++;
         if (user.getName() != null) completedFields++;
         if (user.getPhoneNumber() != null) completedFields++;
-        if (user.isEmailVerified()) completedFields++;
-        
+
         // 역할별 프로필 존재 여부 체크 (추후 구현)
         if (user.getRole() == UserRole.JOB_SEEKER) {
             // JobSeekerProfile 존재 여부 확인
             // 현재는 기본값 처리
-            completedFields++; 
+            completedFields++;
         } else if (user.getRole() == UserRole.RECRUITER) {
-            // RecruiterProfile 존재 여부 확인  
+            // RecruiterProfile 존재 여부 확인
             // 현재는 기본값 처리
             completedFields++;
         }
-        
+
         return (completedFields * 100) / totalFields;
     }
 }

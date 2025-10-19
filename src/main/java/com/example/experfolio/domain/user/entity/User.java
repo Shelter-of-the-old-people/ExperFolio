@@ -34,17 +34,6 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.PENDING;
-
-    @Column(name = "email_verified", nullable = false)
-    private Boolean emailVerified = false;
-
-    @Setter
-    @Column(name = "email_verification_token", length = 255)
-    private String emailVerificationToken;
-
     @Column(name = "password_reset_token", length = 255)
     private String passwordResetToken;
 
@@ -72,28 +61,9 @@ public class User {
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.role = role;
-        this.status = UserStatus.PENDING;
-        this.emailVerified = false;
     }
 
     // 비즈니스 메서드
-    public void activate() {
-        this.status = UserStatus.ACTIVE;
-    }
-
-    public void deactivate() {
-        this.status = UserStatus.INACTIVE;
-    }
-
-    public void suspend() {
-        this.status = UserStatus.SUSPENDED;
-    }
-
-    public void verifyEmail() {
-        this.emailVerified = true;
-        this.emailVerificationToken = null;
-    }
-
     public void updatePassword(String newPassword) {
         this.password = newPassword;
         this.passwordResetToken = null;
@@ -110,7 +80,6 @@ public class User {
 
     public void updateEmail(String email) {
         this.email = email;
-        this.emailVerified = false; // 이메일 변경 시 재인증 필요
     }
 
     public void setPasswordResetToken(String token, LocalDateTime expires) {
@@ -124,19 +93,10 @@ public class User {
 
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
-        this.status = UserStatus.INACTIVE;
     }
 
     public boolean isDeleted() {
         return this.deletedAt != null;
-    }
-
-    public boolean isActive() {
-        return this.status == UserStatus.ACTIVE && !isDeleted();
-    }
-
-    public boolean isEmailVerified() {
-        return this.emailVerified;
     }
 
     public boolean isPasswordResetTokenValid() {

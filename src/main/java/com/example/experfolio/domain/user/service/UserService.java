@@ -2,7 +2,6 @@ package com.example.experfolio.domain.user.service;
 
 import com.example.experfolio.domain.user.entity.User;
 import com.example.experfolio.domain.user.entity.UserRole;
-import com.example.experfolio.domain.user.entity.UserStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,21 +21,9 @@ public interface UserService {
     // 사용자 인증 관련
     boolean existsByEmail(String email);
     boolean isEmailAvailable(String email);
-    Optional<User> findByEmailVerificationToken(String token);
     Optional<User> findByPasswordResetToken(String token);
     Optional<User> findByValidPasswordResetToken(String token);
-    
-    // 사용자 상태 관리
-    User activateUser(UUID userId);
-    void deactivateUser(UUID userId);
-    User suspendUser(UUID userId);
-    void updateUserStatus(UUID userId, UserStatus status);
-    
-    // 이메일 인증
-    void verifyEmail(String token);
-    void sendEmailVerificationToken(UUID userId);
-    String generateEmailVerificationToken(UUID userId);
-    
+
     // 비밀번호 관리
     void updatePassword(UUID userId, String newPassword);
     void requestPasswordReset(String email);
@@ -57,7 +44,6 @@ public interface UserService {
     
     // 사용자 목록 조회
     List<User> findByRole(UserRole role);
-    List<User> findByStatus(UserStatus status);
     List<User> findActiveUsersByRole(UserRole role);
     List<User> findAllActiveUsers();
     
@@ -69,9 +55,7 @@ public interface UserService {
     
     // 검색 기능
     List<User> searchUsersByEmail(String emailPattern);
-    
+
     // 유틸리티 메서드
-    boolean isUserActive(UUID userId);
     boolean isUserDeleted(UUID userId);
-    boolean isEmailVerified(UUID userId);
 }
