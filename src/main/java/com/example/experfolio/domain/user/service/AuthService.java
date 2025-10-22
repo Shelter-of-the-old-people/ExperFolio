@@ -35,10 +35,7 @@ public class AuthService {
         
         // 사용자 생성
         User user = userService.createUser(email, password, role);
-        
-        // 이메일 인증 토큰 발송
-        userService.sendEmailVerificationToken(user.getId());
-        
+
         log.info("회원가입 완료: userId={}, email={}, role={}", user.getId(), email, role);
         
         return user;
@@ -56,17 +53,12 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
-        
-        // 계정 상태 확인
-        if (!user.isActive()) {
-            throw new UnauthorizedException("비활성화된 계정입니다. 관리자에게 문의하세요");
+
+        // 계정 삭제 여부 확인
+        if (user.isDeleted()) {
+            throw new UnauthorizedException("삭제된 계정입니다. 관리자에게 문의하세요");
         }
-        
-        // 이메일 인증 확인 (선택사항, 비즈니스 요구사항에 따라)
-        if (!user.isEmailVerified()) {
-            throw new UnauthorizedException("이메일 인증이 필요합니다. 이메일을 확인해주세요");
-        }
-        
+
         // JWT 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole(), user.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail(), user.getId());
@@ -95,11 +87,11 @@ public class AuthService {
         // 사용자 존재 및 활성 상태 확인
         User user = userService.findActiveByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("사용자를 찾을 수 없습니다"));
-        
-        if (!user.isActive()) {
-            throw new UnauthorizedException("비활성화된 계정입니다");
+
+        if (user.isDeleted()) {
+            throw new UnauthorizedException("삭제된 계정입니다");
         }
-        
+
         // 새로운 Access Token 생성
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole(), user.getId());
         
@@ -116,31 +108,6 @@ public class AuthService {
         // 현재는 클라이언트에서 토큰을 삭제하는 것으로 충분
         
         log.info("로그아웃 완료: userId={}", userId);
-    }
-
-    // 이메일 인증
-    public void verifyEmail(String token) {
-        log.info("이메일 인증 요청: token={}", token);
-        
-        userService.verifyEmail(token);
-        
-        log.info("이메일 인증 완료: token={}", token);
-    }
-
-    // 이메일 인증 토큰 재전송
-    public void resendEmailVerification(String email) {
-        log.info("이메일 인증 토큰 재전송 요청: email={}", email);
-        
-        User user = userService.findActiveByEmail(email)
-                .orElseThrow(() -> new BadRequestException("사용자를 찾을 수 없습니다: " + email));
-        
-        if (user.isEmailVerified()) {
-            throw new BadRequestException("이미 인증된 이메일입니다");
-        }
-        
-        userService.sendEmailVerificationToken(user.getId());
-        
-        log.info("이메일 인증 토큰 재전송 완료: email={}", email);
     }
 
     // 비밀번호 재설정 요청

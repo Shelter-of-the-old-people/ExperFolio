@@ -242,37 +242,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("사용자 목록 조회 기능은 추후 구현됩니다.", null));
     }
 
-    /**
-     * 사용자 계정 활성화/비활성화 (관리자 전용)
-     */
-    @PutMapping("/{userId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "사용자 계정 상태 변경", description = "사용자 계정을 활성화 또는 비활성화합니다. (관리자 전용)")
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "계정 상태 변경 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "접근 권한 없음"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
-    })
-    public ResponseEntity<ApiResponse<UserInfoResponseDto>> updateUserStatus(
-            @PathVariable UUID userId,
-            @Parameter(description = "활성화: true, 비활성화: false")
-            @RequestParam boolean activate) {
-        
-        log.info("사용자 계정 상태 변경 요청: userId={}, activate={}", userId, activate);
-        
-        User user;
-        if (activate) {
-            user = userService.activateUser(userId);
-        } else {
-            user = userService.suspendUser(userId);
-        }
-        
-        UserInfoResponseDto responseDto = convertToUserInfoResponse(user);
-        
-        String message = activate ? "계정이 활성화되었습니다." : "계정이 비활성화되었습니다.";
-        return ResponseEntity.ok(ApiResponse.success(message, responseDto));
-    }
 
     // ===== 유틸리티 메소드 =====
 
@@ -304,8 +273,6 @@ public class UserController {
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
-                .status(user.getStatus())
-                .emailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .lastLoginAt(user.getLastLoginAt())
@@ -321,8 +288,6 @@ public class UserController {
                 .userId(dto.getUserId())
                 .name(maskName(dto.getName())) // 이름 마스킹
                 .role(dto.getRole())
-                .status(dto.getStatus())
-                .emailVerified(dto.isEmailVerified())
                 .createdAt(dto.getCreatedAt())
                 .profileCompletionRate(dto.getProfileCompletionRate())
                 // 이메일, 전화번호 등 민감한 정보 제외
@@ -347,16 +312,15 @@ public class UserController {
      */
     private Integer calculateProfileCompletionRate(User user) {
         int completedFields = 0;
-        int totalFields = 5;
-        
+        int totalFields = 4;
+
         if (user.getEmail() != null) completedFields++;
         if (user.getName() != null) completedFields++;
         if (user.getPhoneNumber() != null) completedFields++;
-        if (user.isEmailVerified()) completedFields++;
-        
+
         // 역할별 프로필 존재 여부 (추후 구현)
         completedFields++;
-        
+
         return (completedFields * 100) / totalFields;
     }
 }

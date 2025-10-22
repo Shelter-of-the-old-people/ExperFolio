@@ -1,8 +1,12 @@
 package com.example.experfolio.domain.portfolio.controller;
 
+import com.example.experfolio.domain.portfolio.dto.BasicInfoDto;
+import com.example.experfolio.domain.portfolio.dto.PortfolioItemDto;
+import com.example.experfolio.domain.portfolio.dto.PortfolioResponseDto;
 import com.example.experfolio.domain.portfolio.service.PortfolioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +35,13 @@ public class PortfolioController {
      */
     @Operation(summary = "포트폴리오 생성", description = "구직자가 새로운 포트폴리오를 생성합니다.")
     @PostMapping
-    public ResponseEntity<?> createPortfolio(
+    public ResponseEntity<PortfolioResponseDto> createPortfolio(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody Object basicInfoDto // TODO: DTO 생성 필요
+            @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.status(HttpStatus.CREATED).body("Portfolio created");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.createPortfolio(userId, basicInfoDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -45,11 +50,12 @@ public class PortfolioController {
      */
     @Operation(summary = "내 포트폴리오 조회", description = "본인의 포트폴리오 전체 정보를 조회합니다.")
     @GetMapping("/me")
-    public ResponseEntity<?> getMyPortfolio(
+    public ResponseEntity<PortfolioResponseDto> getMyPortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.ok("My portfolio");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.getMyPortfolio(userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -58,12 +64,13 @@ public class PortfolioController {
      */
     @Operation(summary = "기본정보 수정", description = "포트폴리오의 기본 정보를 수정합니다.")
     @PutMapping("/basic-info")
-    public ResponseEntity<?> updateBasicInfo(
+    public ResponseEntity<PortfolioResponseDto> updateBasicInfo(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody Object basicInfoDto // TODO: DTO 생성 필요
+            @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.ok("BasicInfo updated");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.updateBasicInfo(userId, basicInfoDto);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -72,13 +79,14 @@ public class PortfolioController {
      */
     @Operation(summary = "아이템 추가", description = "프로젝트/활동/연구 등 아이템을 추가합니다. (최대 5개)")
     @PostMapping("/items")
-    public ResponseEntity<?> addPortfolioItem(
+    public ResponseEntity<PortfolioResponseDto> addPortfolioItem(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestPart(value = "item") Object portfolioItemDto, // TODO: DTO 생성 필요
+            @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.status(HttpStatus.CREATED).body("Item added");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.addPortfolioItem(userId, portfolioItemDto, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -87,14 +95,15 @@ public class PortfolioController {
      */
     @Operation(summary = "아이템 수정", description = "기존 포트폴리오 아이템을 수정합니다.")
     @PutMapping("/items/{itemId}")
-    public ResponseEntity<?> updatePortfolioItem(
+    public ResponseEntity<PortfolioResponseDto> updatePortfolioItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String itemId,
-            @RequestPart(value = "item") Object portfolioItemDto, // TODO: DTO 생성 필요
+            @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.ok("Item updated");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.updatePortfolioItem(userId, itemId, portfolioItemDto, files);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -107,7 +116,8 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String itemId
     ) {
-        // TODO: 서비스 로직 구현
+        String userId = userDetails.getUsername();
+        portfolioService.deletePortfolioItem(userId, itemId);
         return ResponseEntity.noContent().build();
     }
 
@@ -117,12 +127,13 @@ public class PortfolioController {
      */
     @Operation(summary = "아이템 순서 변경", description = "포트폴리오 아이템의 순서를 재배치합니다.")
     @PutMapping("/items/reorder")
-    public ResponseEntity<?> reorderPortfolioItems(
+    public ResponseEntity<PortfolioResponseDto> reorderPortfolioItems(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<String> itemIds
     ) {
-        // TODO: 서비스 로직 구현
-        return ResponseEntity.ok("Items reordered");
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.reorderPortfolioItems(userId, itemIds);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -134,7 +145,8 @@ public class PortfolioController {
     public ResponseEntity<?> deletePortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        // TODO: 서비스 로직 구현
+        String userId = userDetails.getUsername();
+        portfolioService.deletePortfolio(userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -147,7 +159,7 @@ public class PortfolioController {
     public ResponseEntity<?> triggerEmbedding(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        // TODO: Python AI 서버 연동
-        return ResponseEntity.ok("Embedding triggered");
+        // TODO: Python AI 서버 연동 (추후 구현 예정)
+        return ResponseEntity.ok("Embedding triggered (not implemented yet)");
     }
 }

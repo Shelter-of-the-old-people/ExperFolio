@@ -77,6 +77,10 @@ public class JobSeekerProfile {
     @Column(name = "available_start_date")
     private LocalDate availableStartDate;
 
+    // MongoDB 포트폴리오 ID 참조
+    @Column(name = "portfolio_id")
+    private String portfolioId;
+
     // 추가 정보 - URL 리스트 (GitHub, 포트폴리오, LinkedIn 등)
     @ElementCollection
     @CollectionTable(name = "job_seeker_urls", joinColumns = @JoinColumn(name = "job_seeker_id"))
@@ -92,11 +96,11 @@ public class JobSeekerProfile {
     private LocalDateTime updatedAt;
 
     @Builder
-    public JobSeekerProfile(User user, String firstName, String lastName, String phone, 
+    public JobSeekerProfile(User user, String firstName, String lastName, String phone,
                            LocalDate birthDate, String gender, String address, String state, String postalCode, String profileImageUrl, String summary,
-                           String careerObjective, String desiredPosition, Integer desiredSalaryMin, 
-                           Integer desiredSalaryMax, String desiredLocation, 
-                           LocalDate availableStartDate, List<String> urls) {
+                           String careerObjective, String desiredPosition, Integer desiredSalaryMin,
+                           Integer desiredSalaryMax, String desiredLocation,
+                           LocalDate availableStartDate, String portfolioId, List<String> urls) {
         this.user = user;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -114,6 +118,7 @@ public class JobSeekerProfile {
         this.desiredSalaryMax = desiredSalaryMax;
         this.desiredLocation = desiredLocation;
         this.availableStartDate = availableStartDate;
+        this.portfolioId = portfolioId;
         this.urls = urls != null ? new ArrayList<>(urls) : new ArrayList<>();
     }
 
@@ -175,7 +180,11 @@ public class JobSeekerProfile {
     }
 
     public boolean isProfileComplete() {
-        return firstName != null && lastName != null && 
+        return firstName != null && lastName != null &&
                summary != null && desiredPosition != null;
+    }
+
+    public void setPortfolioId(String portfolioId) {
+        this.portfolioId = portfolioId;
     }
 }

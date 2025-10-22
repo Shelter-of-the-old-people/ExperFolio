@@ -2,7 +2,6 @@ package com.example.experfolio.domain.user.service;
 
 import com.example.experfolio.domain.user.entity.User;
 import com.example.experfolio.domain.user.entity.UserRole;
-import com.example.experfolio.domain.user.entity.UserStatus;
 import com.example.experfolio.domain.user.repository.UserRepository;
 import com.example.experfolio.global.exception.BadRequestException;
 import com.example.experfolio.global.exception.ResourceNotFoundException;
@@ -26,8 +25,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     
-    // 토큰 만료 시간 설정 (24시간)
-    private static final long EMAIL_VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60; // 24시간 (초 단위)
+    // 토큰 만료 시간 설정
     private static final long PASSWORD_RESET_TOKEN_EXPIRY = 2 * 60 * 60; // 2시간 (초 단위)
 
     @Override
@@ -50,11 +48,7 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(null) // 회원가입 시에는 전화번호가 없으므로 null
                 .role(role)
                 .build();
-        
-        // 이메일 인증 토큰 생성
-        String verificationToken = generateUniqueToken();
-        user.setEmailVerificationToken(verificationToken);
-        
+
         User savedUser = userRepository.save(user);
         log.info("새 사용자 생성 완료: id={}, email={}", savedUser.getId(), savedUser.getEmail());
         
@@ -93,12 +87,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<User> findByEmailVerificationToken(String token) {
-        return userRepository.findByEmailVerificationToken(token);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<User> findByPasswordResetToken(String token) {
         return userRepository.findByPasswordResetToken(token);
     }
@@ -107,88 +95,6 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Optional<User> findByValidPasswordResetToken(String token) {
         return userRepository.findByValidPasswordResetToken(token, LocalDateTime.now());
-    }
-
-    @Override
-    public User activateUser(UUID userId) {
-        log.info("사용자 활성화: userId={}", userId);
-        updateUserStatus(userId, UserStatus.ACTIVE);
-        return findById(userId).orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-    }
-
-    @Override
-    public void deactivateUser(UUID userId) {
-        log.info("사용자 비활성화: userId={}", userId);
-        updateUserStatus(userId, UserStatus.INACTIVE);
-    }
-
-    @Override
-    public User suspendUser(UUID userId) {
-        log.info("사용자 일시정지: userId={}", userId);
-        updateUserStatus(userId, UserStatus.SUSPENDED);
-        return findById(userId).orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-    }
-
-    @Override
-    public void updateUserStatus(UUID userId, UserStatus status) {
-        User user = findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        if (user.isDeleted()) {
-            throw new BadRequestException("삭제된 사용자의 상태를 변경할 수 없습니다");
-        }
-        
-        userRepository.updateUserStatus(userId, status);
-        log.info("사용자 상태 업데이트 완료: userId={}, status={}", userId, status);
-    }
-
-    @Override
-    public void verifyEmail(String token) {
-        log.info("이메일 인증 요청: token={}", token);
-        
-        User user = findByEmailVerificationToken(token)
-                .orElseThrow(() -> new BadRequestException("유효하지 않은 인증 토큰입니다"));
-        
-        if (user.isEmailVerified()) {
-            throw new BadRequestException("이미 인증된 이메일입니다");
-        }
-        
-        user.verifyEmail();
-        user.activate(); // 이메일 인증 시 자동 활성화
-        userRepository.save(user);
-        
-        log.info("이메일 인증 완료: userId={}, email={}", user.getId(), user.getEmail());
-    }
-
-    @Override
-    public void sendEmailVerificationToken(UUID userId) {
-        User user = findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        if (user.isEmailVerified()) {
-            throw new BadRequestException("이미 인증된 이메일입니다");
-        }
-        
-        String token = generateUniqueToken();
-        user.setEmailVerificationToken(token);
-        userRepository.save(user);
-        
-        // TODO: 실제 이메일 발송 로직 구현 필요
-        log.info("이메일 인증 토큰 발송: userId={}, email={}, token={}", 
-                userId, user.getEmail(), token);
-    }
-
-    @Override
-    public String generateEmailVerificationToken(UUID userId) {
-        String token = generateUniqueToken();
-        
-        User user = findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        user.setEmailVerificationToken(token);
-        userRepository.save(user);
-        
-        return token;
     }
 
     @Override
@@ -307,14 +213,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> findByStatus(UserStatus status) {
-        return userRepository.findByStatus(status);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<User> findActiveUsersByRole(UserRole role) {
-        return userRepository.findActiveUsersByRoleAndStatus(role, UserStatus.ACTIVE);
+        return userRepository.findByRole(role).stream()
+                .filter(user -> !user.isDeleted())
+                .toList();
     }
 
     @Override
@@ -355,29 +257,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isUserActive(UUID userId) {
-        User user = findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        return user.isActive();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public boolean isUserDeleted(UUID userId) {
         User user = findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
         return user.isDeleted();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isEmailVerified(UUID userId) {
-        User user = findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        return user.isEmailVerified();
     }
 
     @Override
@@ -421,16 +305,10 @@ public class UserServiceImpl implements UserService {
         }
         
         user.updateEmail(newEmail);
-        
-        // 새로운 이메일 인증 토큰 생성
-        String verificationToken = generateUniqueToken();
-        user.setEmailVerificationToken(verificationToken);
-        
+
         User updatedUser = userRepository.save(user);
         log.info("사용자 이메일 업데이트 완료: userId={}, newEmail={}", userId, newEmail);
-        
-        // TODO: 새 이메일로 인증 메일 발송
-        
+
         return updatedUser;
     }
 

@@ -1,7 +1,6 @@
 package com.example.experfolio.domain.user.dto;
 
 import com.example.experfolio.domain.user.entity.UserRole;
-import com.example.experfolio.domain.user.entity.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,12 +35,6 @@ public class UserInfoResponseDto {
 
     @Schema(description = "사용자 역할")
     private UserRole role;
-
-    @Schema(description = "계정 상태")
-    private UserStatus status;
-
-    @Schema(description = "이메일 인증 여부")
-    private boolean emailVerified;
 
     @Schema(description = "가입일")
     private LocalDateTime createdAt;

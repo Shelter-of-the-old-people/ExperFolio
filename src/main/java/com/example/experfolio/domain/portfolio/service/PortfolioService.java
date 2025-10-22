@@ -5,6 +5,8 @@ import com.example.experfolio.domain.portfolio.dto.BasicInfoDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioItemDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioResponseDto;
 import com.example.experfolio.domain.portfolio.repository.PortfolioRepository;
+import com.example.experfolio.domain.user.entity.JobSeekerProfile;
+import com.example.experfolio.domain.user.repository.JobSeekerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +29,8 @@ import java.util.UUID;
 public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
-    // TODO: FileStorageService 추가 필요
+    private final FileStorageService fileStorageService;
+    private final JobSeekerProfileRepository jobSeekerProfileRepository;
 
     private static final int MAX_PORTFOLIO_ITEMS = 5;
 
@@ -76,7 +79,27 @@ public class PortfolioService {
         Portfolio savedPortfolio = portfolioRepository.save(portfolio);
         log.info("Portfolio created with id: {}", savedPortfolio.getId());
 
-        // TODO: PostgreSQL JobSeekerProfile에 portfolioId 저장 로직 추가
+        // PostgreSQL JobSeekerProfile에 portfolioId 저장
+        try {
+            JobSeekerProfile jobSeekerProfile = jobSeekerProfileRepository.findByUserId(UUID.fromString(userId))
+                    .orElseThrow(() -> new IllegalArgumentException("구직자 프로필을 찾을 수 없습니다"));
+
+            jobSeekerProfile.setPortfolioId(savedPortfolio.getId());
+            jobSeekerProfileRepository.save(jobSeekerProfile);
+            log.info("PortfolioId saved to JobSeekerProfile for userId: {}", userId);
+        } catch (IllegalArgumentException e) {
+            // 포트폴리오는 생성되었지만 JobSeekerProfile이 없는 경우
+            log.error("JobSeekerProfile not found for userId: {}", userId, e);
+            // MongoDB 포트폴리오 롤백
+            portfolioRepository.delete(savedPortfolio);
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to update JobSeekerProfile with portfolioId for userId: {}", userId, e);
+            // MongoDB 포트폴리오 롤백
+            portfolioRepository.delete(savedPortfolio);
+            throw new RuntimeException("포트폴리오 생성 중 오류가 발생했습니다", e);
+        }
+
         return convertToResponseDto(savedPortfolio);
     }
 
@@ -151,14 +174,18 @@ public class PortfolioService {
         // 파일 업로드 처리
         List<Attachment> attachments = new ArrayList<>();
         if (files != null && files.length > 0) {
-            for (MultipartFile file : files) {
-                // TODO: FileStorageService로 파일 저장
-                String filePath = "uploads/" + file.getOriginalFilename(); // 임시 경로
-                Attachment attachment = Attachment.builder()
-                        .filePath(filePath)
-                        .extractionStatus("pending")
-                        .build();
-                attachments.add(attachment);
+            try {
+                List<String> filePaths = fileStorageService.saveFiles(files, userId);
+                for (String filePath : filePaths) {
+                    Attachment attachment = Attachment.builder()
+                            .filePath(filePath)
+                            .extractionStatus("pending")
+                            .build();
+                    attachments.add(attachment);
+                }
+            } catch (Exception e) {
+                log.error("File upload failed for userId: {}", userId, e);
+                throw new RuntimeException("파일 업로드에 실패했습니다", e);
             }
         }
 
@@ -222,14 +249,18 @@ public class PortfolioService {
                 targetItem.setAttachments(attachments);
             }
 
-            for (MultipartFile file : files) {
-                // TODO: FileStorageService로 파일 저장
-                String filePath = "uploads/" + file.getOriginalFilename(); // 임시 경로
-                Attachment attachment = Attachment.builder()
-                        .filePath(filePath)
-                        .extractionStatus("pending")
-                        .build();
-                attachments.add(attachment);
+            try {
+                List<String> filePaths = fileStorageService.saveFiles(files, userId);
+                for (String filePath : filePaths) {
+                    Attachment attachment = Attachment.builder()
+                            .filePath(filePath)
+                            .extractionStatus("pending")
+                            .build();
+                    attachments.add(attachment);
+                }
+            } catch (Exception e) {
+                log.error("File upload failed for userId: {}, itemId: {}", userId, itemId, e);
+                throw new RuntimeException("파일 업로드에 실패했습니다", e);
             }
         }
 
@@ -262,10 +293,10 @@ public class PortfolioService {
 
         // 첨부파일 삭제
         if (targetItem.getAttachments() != null && !targetItem.getAttachments().isEmpty()) {
-            for (Attachment attachment : targetItem.getAttachments()) {
-                // TODO: FileStorageService로 파일 삭제
-                log.info("Deleting file: {}", attachment.getFilePath());
-            }
+            List<String> filePaths = targetItem.getAttachments().stream()
+                    .map(Attachment::getFilePath)
+                    .toList();
+            fileStorageService.deleteFiles(filePaths);
         }
 
         // 아이템 삭제
@@ -321,11 +352,11 @@ public class PortfolioService {
         // 모든 첨부파일 삭제
         if (portfolio.getPortfolioItems() != null) {
             for (PortfolioItem item : portfolio.getPortfolioItems()) {
-                if (item.getAttachments() != null) {
-                    for (Attachment attachment : item.getAttachments()) {
-                        // TODO: FileStorageService로 파일 삭제
-                        log.info("Deleting file: {}", attachment.getFilePath());
-                    }
+                if (item.getAttachments() != null && !item.getAttachments().isEmpty()) {
+                    List<String> filePaths = item.getAttachments().stream()
+                            .map(Attachment::getFilePath)
+                            .toList();
+                    fileStorageService.deleteFiles(filePaths);
                 }
             }
         }
@@ -333,27 +364,24 @@ public class PortfolioService {
         // MongoDB 문서 삭제
         portfolioRepository.delete(portfolio);
 
-        // TODO: PostgreSQL JobSeekerProfile의 portfolioId NULL 처리
+        // PostgreSQL JobSeekerProfile의 portfolioId NULL 처리
+        try {
+            JobSeekerProfile jobSeekerProfile = jobSeekerProfileRepository.findByUserId(UUID.fromString(userId))
+                    .orElse(null);
+
+            if (jobSeekerProfile != null) {
+                jobSeekerProfile.setPortfolioId(null);
+                jobSeekerProfileRepository.save(jobSeekerProfile);
+                log.info("PortfolioId cleared from JobSeekerProfile for userId: {}", userId);
+            } else {
+                log.warn("JobSeekerProfile not found for userId: {} during portfolio deletion", userId);
+            }
+        } catch (Exception e) {
+            // 포트폴리오는 이미 삭제되었으므로 경고만 남기고 계속 진행
+            log.warn("Failed to update JobSeekerProfile portfolioId for userId: {}", userId, e);
+        }
 
         log.info("Portfolio deleted for userId: {}", userId);
-    }
-
-    /**
-     * 수동 임베딩 트리거
-     */
-    @Transactional
-    public void triggerEmbedding(String userId) {
-        log.info("Triggering embedding for userId: {}", userId);
-
-        Portfolio portfolio = portfolioRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
-
-        portfolio.getProcessingStatus().setNeedsEmbedding(true);
-        portfolioRepository.save(portfolio);
-
-        // TODO: Python AI 서버로 임베딩 요청 전달
-
-        log.info("Embedding triggered for portfolioId: {}", portfolio.getId());
     }
 
     /**

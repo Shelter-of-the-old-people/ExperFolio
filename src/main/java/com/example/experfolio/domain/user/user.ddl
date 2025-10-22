@@ -7,9 +7,6 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('JOB_SEEKER', 'RECRUITER')),
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED')),
-    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    email_verification_token VARCHAR(255),
     password_reset_token VARCHAR(255),
     password_reset_expires TIMESTAMP,
     last_login_at TIMESTAMP,
@@ -21,17 +18,13 @@ CREATE TABLE users (
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users (email);
 CREATE INDEX idx_users_role ON users (role);
-CREATE INDEX idx_users_status ON users (status);
-CREATE INDEX idx_users_email_verified ON users (email_verified);
-CREATE INDEX idx_users_email_verification_token ON users (email_verification_token);
 CREATE INDEX idx_users_password_reset_token ON users (password_reset_token);
 CREATE INDEX idx_users_created_at ON users (created_at);
 CREATE INDEX idx_users_deleted_at ON users (deleted_at);
 
 -- Create composite indexes for common queries
-CREATE INDEX idx_users_role_status ON users (role, status);
-CREATE INDEX idx_users_email_status ON users (email, status);
-CREATE INDEX idx_users_active_users ON users (status, deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX idx_users_role_deleted ON users (role, deleted_at);
+CREATE INDEX idx_users_active_users ON users (deleted_at) WHERE deleted_at IS NULL;
 
 -- Create function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -54,9 +47,6 @@ COMMENT ON COLUMN users.id IS 'Primary key - UUID generated automatically';
 COMMENT ON COLUMN users.email IS 'Unique email address for login';
 COMMENT ON COLUMN users.password IS 'Encrypted password';
 COMMENT ON COLUMN users.role IS 'User role: JOB_SEEKER or RECRUITER';
-COMMENT ON COLUMN users.status IS 'Account status: ACTIVE, INACTIVE, PENDING, SUSPENDED';
-COMMENT ON COLUMN users.email_verified IS 'Whether email has been verified';
-COMMENT ON COLUMN users.email_verification_token IS 'Token for email verification';
 COMMENT ON COLUMN users.password_reset_token IS 'Token for password reset';
 COMMENT ON COLUMN users.password_reset_expires IS 'Expiration time for password reset token';
 COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last login';
