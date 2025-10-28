@@ -183,11 +183,6 @@ public class RecruiterProfileService {
         return recruiterProfileRepository.findByIsCompanyVerified(false);
     }
 
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findVerifiedActiveProfiles() {
-        return recruiterProfileRepository.findVerifiedActiveRecruiterProfiles();
-    }
-
     // 인증 서류 관련
     @Transactional(readOnly = true)
     public List<RecruiterProfile> findProfilesWithVerificationDocuments() {
@@ -225,11 +220,6 @@ public class RecruiterProfileService {
     @Transactional(readOnly = true)
     public List<RecruiterProfile> findIncompleteProfiles() {
         return recruiterProfileRepository.findIncompleteProfiles();
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findActiveProfiles() {
-        return recruiterProfileRepository.findActiveRecruiterProfiles();
     }
 
     // 통계 기능

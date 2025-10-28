@@ -196,11 +196,6 @@ public class JobSeekerProfileService {
         return jobSeekerProfileRepository.findIncompleteProfiles();
     }
 
-    @Transactional(readOnly = true)
-    public List<JobSeekerProfile> findActiveProfiles() {
-        return jobSeekerProfileRepository.findActiveJobSeekerProfiles();
-    }
-
     // 통계 기능
     @Transactional(readOnly = true)
     public long countByDesiredPosition(String position) {

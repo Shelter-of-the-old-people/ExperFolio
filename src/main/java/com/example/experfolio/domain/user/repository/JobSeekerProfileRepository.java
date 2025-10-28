@@ -103,10 +103,6 @@ public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfi
     // 주/도 키워드로 프로필 검색
     List<JobSeekerProfile> findByStateContainingIgnoreCase(String stateKeyword);
 
-    // 활성 사용자의 프로필만 조회
-    @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE jsp.user.status = 'ACTIVE' AND jsp.user.deletedAt IS NULL")
-    List<JobSeekerProfile> findActiveJobSeekerProfiles();
-
     // 희망 직책별 프로필 수 조회
     @Query("SELECT COUNT(jsp) FROM JobSeekerProfile jsp WHERE jsp.desiredPosition = :position")
     long countByDesiredPosition(@Param("position") String position);

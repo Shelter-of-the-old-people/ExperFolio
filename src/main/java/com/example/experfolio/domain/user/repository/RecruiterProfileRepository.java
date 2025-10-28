@@ -100,15 +100,6 @@ public interface RecruiterProfileRepository extends JpaRepository<RecruiterProfi
            "rp.companyVerificationDocumentUrl IS NULL")
     List<RecruiterProfile> findProfilesWithoutVerificationDocuments();
 
-    // 활성 사용자의 프로필만 조회
-    @Query("SELECT rp FROM RecruiterProfile rp WHERE rp.user.status = 'ACTIVE' AND rp.user.deletedAt IS NULL")
-    List<RecruiterProfile> findActiveRecruiterProfiles();
-
-    // 인증된 활성 채용담당자 프로필 조회
-    @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.isCompanyVerified = true AND rp.user.status = 'ACTIVE' AND rp.user.deletedAt IS NULL")
-    List<RecruiterProfile> findVerifiedActiveRecruiterProfiles();
-
     // 회사명별 프로필 수 조회
     @Query("SELECT COUNT(rp) FROM RecruiterProfile rp WHERE rp.companyName = :companyName")
     long countByCompanyName(@Param("companyName") String companyName);

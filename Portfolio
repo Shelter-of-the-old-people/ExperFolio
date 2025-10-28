@@ -1,6 +1,5 @@
 1번과 2번을 수정했고, 3번, 4번은 수정하지 않아도 괜찮은 부분이야. 그래서 아래와 같이 변경되었어.
 
-```
 # Experfolio MongoDB 포트폴리오 관리 Use Case
 
 ## 1. 포트폴리오 생성 Use Case
@@ -347,4 +346,3 @@
 ### Search API (Python FastAPI 경유)
 
 - `POST /api/search/portfolios` - 자연어 검색
-```
