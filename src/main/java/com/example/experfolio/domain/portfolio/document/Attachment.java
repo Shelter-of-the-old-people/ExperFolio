@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Attachment {
     private String filePath;
-    private String extractionStatus; // "pending", "completed", "failed"
+    private String extractionStatus;
 }

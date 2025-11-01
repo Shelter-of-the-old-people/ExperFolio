@@ -53,7 +53,7 @@ public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfi
 
     // 연봉 범위 내 프로필 조회
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "jsp.desiredSalaryMin >= :minSalary AND jsp.desiredSalaryMax <= :maxSalary")
+            "jsp.desiredSalaryMin >= :minSalary AND jsp.desiredSalaryMax <= :maxSalary")
     List<JobSeekerProfile> findBySalaryRange(@Param("minSalary") Integer minSalary, @Param("maxSalary") Integer maxSalary);
 
     // 특정 입사 가능일자로 프로필 조회
@@ -71,26 +71,26 @@ public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfi
 
     // 직책과 지역으로 프로필 조회
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "jsp.desiredPosition LIKE %:position% AND jsp.desiredLocation LIKE %:location%")
+            "jsp.desiredPosition LIKE %:position% AND jsp.desiredLocation LIKE %:location%")
     List<JobSeekerProfile> findByPositionAndLocation(@Param("position") String position, @Param("location") String location);
 
     // 완성된 프로필 조회
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "jsp.summary IS NOT NULL AND jsp.summary != '' AND " +
-           "jsp.desiredPosition IS NOT NULL AND jsp.desiredPosition != ''")
+            "jsp.summary IS NOT NULL AND jsp.summary != '' AND " +
+            "jsp.desiredPosition IS NOT NULL AND jsp.desiredPosition != ''")
     List<JobSeekerProfile> findCompleteProfiles();
 
     // 미완성 프로필 조회
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "jsp.summary IS NULL OR jsp.summary = '' OR " +
-           "jsp.desiredPosition IS NULL OR jsp.desiredPosition = ''")
+            "jsp.summary IS NULL OR jsp.summary = '' OR " +
+            "jsp.desiredPosition IS NULL OR jsp.desiredPosition = ''")
     List<JobSeekerProfile> findIncompleteProfiles();
 
     // 프로필 텍스트에서 키워드로 검색 (RAG 검색용)
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "LOWER(jsp.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(jsp.careerObjective) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(jsp.desiredPosition) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "LOWER(jsp.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(jsp.careerObjective) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(jsp.desiredPosition) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<JobSeekerProfile> findByKeywordInProfileText(@Param("keyword") String keyword);
 
     // URL 패턴으로 프로필 검색
@@ -102,6 +102,10 @@ public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfi
 
     // 주/도 키워드로 프로필 검색
     List<JobSeekerProfile> findByStateContainingIgnoreCase(String stateKeyword);
+
+    // 활성 사용자의 프로필만 조회
+    @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE jsp.user.deletedAt IS NULL")
+    List<JobSeekerProfile> findActiveJobSeekerProfiles();
 
     // 희망 직책별 프로필 수 조회
     @Query("SELECT COUNT(jsp) FROM JobSeekerProfile jsp WHERE jsp.desiredPosition = :position")
@@ -117,14 +121,14 @@ public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfi
 
     // 복합 검색 조건으로 프로필 조회
     @Query("SELECT jsp FROM JobSeekerProfile jsp WHERE " +
-           "jsp.desiredPosition LIKE %:position% AND " +
-           "jsp.desiredLocation LIKE %:location% AND " +
-           "jsp.desiredSalaryMin >= :minSalary AND " +
-           "jsp.availableStartDate <= :maxStartDate")
+            "jsp.desiredPosition LIKE %:position% AND " +
+            "jsp.desiredLocation LIKE %:location% AND " +
+            "jsp.desiredSalaryMin >= :minSalary AND " +
+            "jsp.availableStartDate <= :maxStartDate")
     List<JobSeekerProfile> findBySearchCriteria(
-        @Param("position") String position,
-        @Param("location") String location,
-        @Param("minSalary") Integer minSalary,
-        @Param("maxStartDate") LocalDate maxStartDate
+            @Param("position") String position,
+            @Param("location") String location,
+            @Param("minSalary") Integer minSalary,
+            @Param("maxStartDate") LocalDate maxStartDate
     );
 }

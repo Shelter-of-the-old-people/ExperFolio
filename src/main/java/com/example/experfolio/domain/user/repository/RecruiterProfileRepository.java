@@ -51,10 +51,10 @@ public interface RecruiterProfileRepository extends JpaRepository<RecruiterProfi
 
     // 키워드로 프로필 전체 검색
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "LOWER(rp.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(rp.department) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(rp.position) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(rp.companyDescription) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "LOWER(rp.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(rp.department) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(rp.position) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(rp.companyDescription) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<RecruiterProfile> findByKeyword(@Param("keyword") String keyword);
 
     // 회사 인증 상태별 프로필 조회
@@ -68,37 +68,46 @@ public interface RecruiterProfileRepository extends JpaRepository<RecruiterProfi
 
     // 회사명과 사업자등록번호로 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.companyName = :companyName AND rp.businessRegistrationNumber = :businessRegNumber")
+            "rp.companyName = :companyName AND rp.businessRegistrationNumber = :businessRegNumber")
     List<RecruiterProfile> findByCompanyNameAndBusinessRegistrationNumber(
-        @Param("companyName") String companyName, 
-        @Param("businessRegNumber") String businessRegistrationNumber
+            @Param("companyName") String companyName,
+            @Param("businessRegNumber") String businessRegistrationNumber
     );
 
     // 완성된 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.firstName IS NOT NULL AND rp.firstName != '' AND " +
-           "rp.lastName IS NOT NULL AND rp.lastName != '' AND " +
-           "rp.companyName IS NOT NULL AND rp.companyName != ''")
+            "rp.firstName IS NOT NULL AND rp.firstName != '' AND " +
+            "rp.lastName IS NOT NULL AND rp.lastName != '' AND " +
+            "rp.companyName IS NOT NULL AND rp.companyName != ''")
     List<RecruiterProfile> findCompleteProfiles();
 
     // 미완성 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.firstName IS NULL OR rp.firstName = '' OR " +
-           "rp.lastName IS NULL OR rp.lastName = '' OR " +
-           "rp.companyName IS NULL OR rp.companyName = ''")
+            "rp.firstName IS NULL OR rp.firstName = '' OR " +
+            "rp.lastName IS NULL OR rp.lastName = '' OR " +
+            "rp.companyName IS NULL OR rp.companyName = ''")
     List<RecruiterProfile> findIncompleteProfiles();
 
     // 인증 서류가 있는 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.businessRegistrationNumber IS NOT NULL OR " +
-           "rp.companyVerificationDocumentUrl IS NOT NULL")
+            "rp.businessRegistrationNumber IS NOT NULL OR " +
+            "rp.companyVerificationDocumentUrl IS NOT NULL")
     List<RecruiterProfile> findProfilesWithVerificationDocuments();
 
     // 인증 서류가 없는 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.businessRegistrationNumber IS NULL AND " +
-           "rp.companyVerificationDocumentUrl IS NULL")
+            "rp.businessRegistrationNumber IS NULL AND " +
+            "rp.companyVerificationDocumentUrl IS NULL")
     List<RecruiterProfile> findProfilesWithoutVerificationDocuments();
+
+    // 활성 사용자의 프로필만 조회
+    @Query("SELECT rp FROM RecruiterProfile rp WHERE rp.user.deletedAt IS NULL")
+    List<RecruiterProfile> findActiveRecruiterProfiles();
+
+    // 인증된 활성 채용담당자 프로필 조회
+    @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
+            "rp.isCompanyVerified = true AND rp.user.deletedAt IS NULL")
+    List<RecruiterProfile> findVerifiedActiveRecruiterProfiles();
 
     // 회사명별 프로필 수 조회
     @Query("SELECT COUNT(rp) FROM RecruiterProfile rp WHERE rp.companyName = :companyName")
@@ -136,12 +145,12 @@ public interface RecruiterProfileRepository extends JpaRepository<RecruiterProfi
 
     // 복합 검색 조건으로 프로필 조회
     @Query("SELECT rp FROM RecruiterProfile rp WHERE " +
-           "rp.companyName LIKE %:companyName% AND " +
-           "rp.department LIKE %:department% AND " +
-           "rp.isCompanyVerified = :isVerified")
+            "rp.companyName LIKE %:companyName% AND " +
+            "rp.department LIKE %:department% AND " +
+            "rp.isCompanyVerified = :isVerified")
     List<RecruiterProfile> findBySearchCriteria(
-        @Param("companyName") String companyName,
-        @Param("department") String department,
-        @Param("isVerified") Boolean isVerified
+            @Param("companyName") String companyName,
+            @Param("department") String department,
+            @Param("isVerified") Boolean isVerified
     );
 }

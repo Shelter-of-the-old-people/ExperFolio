@@ -149,17 +149,4 @@ public class PortfolioController {
         portfolioService.deletePortfolio(userId);
         return ResponseEntity.noContent().build();
     }
-
-    /**
-     * 수동 임베딩 트리거 (개발/테스트용)
-     * Actor: JOB_SEEKER
-     */
-    @Operation(summary = "수동 임베딩 트리거", description = "포트폴리오의 임베딩을 수동으로 트리거합니다.")
-    @PostMapping("/trigger-embedding")
-    public ResponseEntity<?> triggerEmbedding(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        // TODO: Python AI 서버 연동 (추후 구현 예정)
-        return ResponseEntity.ok("Embedding triggered (not implemented yet)");
-    }
 }
