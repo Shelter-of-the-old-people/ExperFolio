@@ -48,10 +48,7 @@ public interface UserService {
     List<User> findAllActiveUsers();
     
     // 관리자 기능
-    List<User> findUnverifiedUsers(LocalDateTime cutoffDate);
-    List<User> findInactiveUsers(LocalDateTime cutoffDate);
     long countUsersByRole(UserRole role);
-    long countUsersRegisteredBetween(LocalDateTime startDate, LocalDateTime endDate);
     
     // 검색 기능
     List<User> searchUsersByEmail(String emailPattern);

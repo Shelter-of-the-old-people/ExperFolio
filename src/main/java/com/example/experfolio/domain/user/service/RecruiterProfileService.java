@@ -83,17 +83,6 @@ public class RecruiterProfileService {
         return savedProfile;
     }
 
-    // 회사 정보 업데이트
-    public RecruiterProfile updateCompanyInfo(UUID userId, String companyName, String companyWebsite,
-                                            String companyDescription, String department, String position) {
-        log.info("채용담당자 회사 정보 업데이트: userId={}, companyName={}", userId, companyName);
-        
-        RecruiterProfile profile = getByUserId(userId);
-        profile.updateCompanyInfo(companyName, companyWebsite, companyDescription, department, position);
-        
-        return recruiterProfileRepository.save(profile);
-    }
-
     // 인증 정보 업데이트
     public RecruiterProfile updateVerificationInfo(UUID userId, String businessRegistrationNumber,
                                                  String companyVerificationDocumentUrl) {
@@ -123,15 +112,6 @@ public class RecruiterProfileService {
         return savedProfile;
     }
 
-    public RecruiterProfile unverifyCompany(UUID userId) {
-        log.info("회사 인증 해제: userId={}", userId);
-        
-        RecruiterProfile profile = getByUserId(userId);
-        profile.unverifyCompany();
-        
-        return recruiterProfileRepository.save(profile);
-    }
-
     // 회사별 인증 관리 (관리자 기능)
     public void verifyCompaniesByBusinessRegistrationNumber(String businessRegistrationNumber) {
         log.info("사업자등록번호로 회사 일괄 인증: businessRegNumber={}", businessRegistrationNumber);
@@ -149,66 +129,6 @@ public class RecruiterProfileService {
         
         recruiterProfileRepository.updateVerificationStatus(profileId, isVerified);
         log.info("회사 인증 상태 업데이트 완료: profileId={}", profileId);
-    }
-
-    // 검색 기능
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findByCompanyName(String companyName) {
-        return recruiterProfileRepository.findByCompanyNameContainingIgnoreCase(companyName);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findByDepartment(String department) {
-        return recruiterProfileRepository.findByDepartmentContainingIgnoreCase(department);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findByPosition(String position) {
-        return recruiterProfileRepository.findByPositionContainingIgnoreCase(position);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> searchByKeyword(String keyword) {
-        return recruiterProfileRepository.findByKeyword(keyword);
-    }
-
-    // 인증 상태별 조회
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findVerifiedProfiles() {
-        return recruiterProfileRepository.findByIsCompanyVerified(true);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findUnverifiedProfiles() {
-        return recruiterProfileRepository.findByIsCompanyVerified(false);
-    }
-
-    // 인증 서류 관련
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findProfilesWithVerificationDocuments() {
-        return recruiterProfileRepository.findProfilesWithVerificationDocuments();
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findProfilesWithoutVerificationDocuments() {
-        return recruiterProfileRepository.findProfilesWithoutVerificationDocuments();
-    }
-
-    // 사업자등록번호 관련
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findByBusinessRegistrationNumber(String businessRegistrationNumber) {
-        return recruiterProfileRepository.findByBusinessRegistrationNumber(businessRegistrationNumber);
-    }
-
-    @Transactional(readOnly = true)
-    public boolean existsByBusinessRegistrationNumber(String businessRegistrationNumber) {
-        return recruiterProfileRepository.existsByBusinessRegistrationNumber(businessRegistrationNumber);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruiterProfile> findByCompanyNameAndBusinessRegistrationNumber(String companyName, 
-                                                                               String businessRegistrationNumber) {
-        return recruiterProfileRepository.findByCompanyNameAndBusinessRegistrationNumber(companyName, businessRegistrationNumber);
     }
 
     // 프로필 상태 관리

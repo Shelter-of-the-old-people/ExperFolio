@@ -104,6 +104,18 @@ public class PortfolioService {
     }
 
     /**
+     * 1.2 BasicInfo 전체 조회
+     */
+    @Transactional(readOnly = true)
+    public PortfolioResponseDto getMyBasicInfo(String userId) {
+        log.info("Fetching basicInfo for userId: {}", userId);
+
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
+
+    }
+
+    /**
      * 2.1 포트폴리오 전체 조회
      */
     @Transactional(readOnly = true)

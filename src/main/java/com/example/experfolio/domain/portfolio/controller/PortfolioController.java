@@ -44,6 +44,20 @@ public class PortfolioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /** BasicInfo 조회
+     * 1.2 포트폴리오 생성
+     * Actor: JOB_SEEKER
+     */
+    @Operation(summary = "내 기본 정보 조회", description = "본인의 기본 정보를 조회합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<PortfolioResponseDto> getMyBasicInfo(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String userId = userDetails.getUsername();
+        PortfolioResponseDto response = portfolioService.getMyBasicInfo(userId);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * 2.1 포트폴리오 전체 조회
      * Actor: JOB_SEEKER

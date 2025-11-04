@@ -31,14 +31,8 @@ public interface RecruiterProfileRepository extends JpaRepository<RecruiterProfi
     // 사용자 ID의 프로필 존재 여부 확인
     boolean existsByUserId(UUID userId);
 
-    // 회사명으로 프로필 조회
-    List<RecruiterProfile> findByCompanyName(String companyName);
-
     // 회사명 키워드로 프로필 검색
     List<RecruiterProfile> findByCompanyNameContainingIgnoreCase(String companyKeyword);
-
-    // 부서별 프로필 조회
-    List<RecruiterProfile> findByDepartment(String department);
 
     // 부서 키워드로 프로필 검색
     List<RecruiterProfile> findByDepartmentContainingIgnoreCase(String departmentKeyword);
