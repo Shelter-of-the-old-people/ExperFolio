@@ -20,6 +20,8 @@ import java.util.List;
 /**
  * 포트폴리오 관리 컨트롤러
  * Portfolio.txt Use Case 기반으로 구성
+ *
+ * NOTE: userDetails.getUsername()은 JWT의 userId claim (UUID 문자열)을 반환합니다.
  */
 @Tag(name = "Portfolio", description = "포트폴리오 관리 API")
 @RestController
@@ -39,23 +41,9 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.createPortfolio(userId, basicInfoDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /** BasicInfo 조회
-     * 1.2 포트폴리오 생성
-     * Actor: JOB_SEEKER
-     */
-    @Operation(summary = "내 기본 정보 조회", description = "본인의 기본 정보를 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<PortfolioResponseDto> getMyBasicInfo(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        String userId = userDetails.getUsername();
-        PortfolioResponseDto response = portfolioService.getMyBasicInfo(userId);
-        return ResponseEntity.ok(response);
     }
 
     /**
@@ -67,7 +55,7 @@ public class PortfolioController {
     public ResponseEntity<PortfolioResponseDto> getMyPortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.getMyPortfolio(userId);
         return ResponseEntity.ok(response);
     }
@@ -82,7 +70,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.updateBasicInfo(userId, basicInfoDto);
         return ResponseEntity.ok(response);
     }
@@ -98,7 +86,7 @@ public class PortfolioController {
             @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.addPortfolioItem(userId, portfolioItemDto, files);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -115,7 +103,7 @@ public class PortfolioController {
             @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.updatePortfolioItem(userId, itemId, portfolioItemDto, files);
         return ResponseEntity.ok(response);
     }
@@ -130,7 +118,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String itemId
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         portfolioService.deletePortfolioItem(userId, itemId);
         return ResponseEntity.noContent().build();
     }
@@ -145,7 +133,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<String> itemIds
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.reorderPortfolioItems(userId, itemIds);
         return ResponseEntity.ok(response);
     }
@@ -159,7 +147,7 @@ public class PortfolioController {
     public ResponseEntity<?> deletePortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         portfolioService.deletePortfolio(userId);
         return ResponseEntity.noContent().build();
     }
