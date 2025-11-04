@@ -17,13 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class BasicInfoDto {
 
-    @NotBlank(message = "이름은 필수입니다")
     private String name;
-
-    @NotBlank(message = "학교명은 필수입니다")
     private String schoolName;
-
-    @NotBlank(message = "전공은 필수입니다")
     private String major;
 
     private Double gpa;

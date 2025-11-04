@@ -183,7 +183,7 @@ public class UserServiceImpl implements UserService {
         }
         
         User savedUser = userRepository.save(user);
-        log.info("사용자 정보 업데이트 완료: userId={}", user.getId());
+        log.info("사용자 업데이트 완료: userId={}", user.getId());
         
         return savedUser;
     }
@@ -227,26 +227,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> findUnverifiedUsers(LocalDateTime cutoffDate) {
-        return userRepository.findUnverifiedUsersCreatedBefore(cutoffDate);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<User> findInactiveUsers(LocalDateTime cutoffDate) {
-        return userRepository.findInactiveUsersSince(cutoffDate);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public long countUsersByRole(UserRole role) {
         return userRepository.countActiveUsersByRole(role);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long countUsersRegisteredBetween(LocalDateTime startDate, LocalDateTime endDate) {
-        return userRepository.countUsersRegisteredBetween(startDate, endDate);
     }
 
     @Override

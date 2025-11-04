@@ -7,6 +7,7 @@ import com.example.experfolio.domain.portfolio.dto.PortfolioResponseDto;
 import com.example.experfolio.domain.portfolio.repository.PortfolioRepository;
 import com.example.experfolio.domain.user.entity.JobSeekerProfile;
 import com.example.experfolio.domain.user.repository.JobSeekerProfileRepository;
+import com.example.experfolio.domain.user.service.JobSeekerProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final FileStorageService fileStorageService;
     private final JobSeekerProfileRepository jobSeekerProfileRepository;
+    private final JobSeekerProfileService jobSeekerProfileService;
 
     private static final int MAX_PORTFOLIO_ITEMS = 5;
 
@@ -45,6 +47,8 @@ public class PortfolioService {
         if (portfolioRepository.existsByUserId(userId)) {
             throw new IllegalStateException("포트폴리오가 이미 존재합니다");
         }
+
+       jobSeekerProfileService.createProfile(UUID.fromString(userId));
 
         // BasicInfo 생성
         BasicInfo basicInfo = BasicInfo.builder()
@@ -101,6 +105,19 @@ public class PortfolioService {
         }
 
         return convertToResponseDto(savedPortfolio);
+    }
+
+    /**
+     * 1.2 BasicInfo 전체 조회
+     */
+    @Transactional(readOnly = true)
+    public PortfolioResponseDto getMyBasicInfo(String userId) {
+        log.info("Fetching basicInfo for userId: {}", userId);
+
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
+
+        return convertToResponseDto(portfolio);
     }
 
     /**

@@ -20,6 +20,8 @@ import java.util.List;
 /**
  * 포트폴리오 관리 컨트롤러
  * Portfolio.txt Use Case 기반으로 구성
+ *
+ * NOTE: userDetails.getUsername()은 JWT의 userId claim (UUID 문자열)을 반환합니다.
  */
 @Tag(name = "Portfolio", description = "포트폴리오 관리 API")
 @RestController
@@ -39,7 +41,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.createPortfolio(userId, basicInfoDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -53,7 +55,7 @@ public class PortfolioController {
     public ResponseEntity<PortfolioResponseDto> getMyPortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.getMyPortfolio(userId);
         return ResponseEntity.ok(response);
     }
@@ -68,7 +70,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BasicInfoDto basicInfoDto
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.updateBasicInfo(userId, basicInfoDto);
         return ResponseEntity.ok(response);
     }
@@ -84,7 +86,7 @@ public class PortfolioController {
             @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.addPortfolioItem(userId, portfolioItemDto, files);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -101,7 +103,7 @@ public class PortfolioController {
             @Valid @RequestPart(value = "item") PortfolioItemDto portfolioItemDto,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.updatePortfolioItem(userId, itemId, portfolioItemDto, files);
         return ResponseEntity.ok(response);
     }
@@ -116,7 +118,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String itemId
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         portfolioService.deletePortfolioItem(userId, itemId);
         return ResponseEntity.noContent().build();
     }
@@ -131,7 +133,7 @@ public class PortfolioController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody List<String> itemIds
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         PortfolioResponseDto response = portfolioService.reorderPortfolioItems(userId, itemIds);
         return ResponseEntity.ok(response);
     }
@@ -145,21 +147,8 @@ public class PortfolioController {
     public ResponseEntity<?> deletePortfolio(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String userId = userDetails.getUsername();
+        String userId = userDetails.getUsername(); // UUID 문자열
         portfolioService.deletePortfolio(userId);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * 수동 임베딩 트리거 (개발/테스트용)
-     * Actor: JOB_SEEKER
-     */
-    @Operation(summary = "수동 임베딩 트리거", description = "포트폴리오의 임베딩을 수동으로 트리거합니다.")
-    @PostMapping("/trigger-embedding")
-    public ResponseEntity<?> triggerEmbedding(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        // TODO: Python AI 서버 연동 (추후 구현 예정)
-        return ResponseEntity.ok("Embedding triggered (not implemented yet)");
     }
 }

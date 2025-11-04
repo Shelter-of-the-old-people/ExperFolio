@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-/* 수상경력
-* */
+/* 수상경력 */
 public class Award {
     private String awardName;
     private String achievement;

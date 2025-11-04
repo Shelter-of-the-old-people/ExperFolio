@@ -50,6 +50,15 @@ jwt:
   access-token-validity-in-seconds: ${JWT_ACCESS_TOKEN_VALIDITY:1800}
   refresh-token-validity-in-seconds: ${JWT_REFRESH_TOKEN_VALIDITY:604800}
 
+# AI Server Configuration
+ai:
+  server:
+    url: ${AI_SERVER_URL:http://localhost:8001}
+    search-endpoint: ${AI_SERVER_SEARCH_ENDPOINT:/ai/search}
+    timeout:
+      connect: ${AI_SERVER_TIMEOUT_CONNECT:5000}  # 5 seconds
+      read: ${AI_SERVER_TIMEOUT_READ:30000}       # 30 seconds
+
 # API Documentation
 springdoc:
   api-docs:

@@ -73,9 +73,13 @@ public class JwtTokenProvider {
     // JWT 토큰에서 인증 정보 추출
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
-        
+
         if (claims.get("role") == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+        }
+
+        if (claims.get("userId") == null) {
+            throw new RuntimeException("사용자 ID 정보가 없는 토큰입니다.");
         }
 
         Collection<? extends GrantedAuthority> authorities =
@@ -83,7 +87,9 @@ public class JwtTokenProvider {
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                         .collect(Collectors.toList());
 
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
+        // principal의 username을 UUID로 설정 (이메일 대신)
+        String userId = claims.get("userId", String.class);
+        UserDetails principal = new User(userId, "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
