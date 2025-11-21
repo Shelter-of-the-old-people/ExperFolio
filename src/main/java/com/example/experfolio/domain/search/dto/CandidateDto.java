@@ -34,4 +34,8 @@ public class CandidateDto {
     @JsonProperty("keywords")
     @Schema(description = "키워드 목록", example = "[\"React\", \"TypeScript\", \"영화 검색 사이트\"]")
     private List<String> keywords;
+
+    @JsonProperty("userInfo")
+    @Schema(description = "사용자 기본 정보 (포트폴리오에서 추출)")
+    private UserInfoDto userInfo;
 }

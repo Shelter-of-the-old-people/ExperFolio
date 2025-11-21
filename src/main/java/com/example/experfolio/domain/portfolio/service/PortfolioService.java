@@ -2,6 +2,7 @@ package com.example.experfolio.domain.portfolio.service;
 
 import com.example.experfolio.domain.portfolio.document.*;
 import com.example.experfolio.domain.portfolio.dto.BasicInfoDto;
+import com.example.experfolio.domain.portfolio.dto.ExistPortfolioDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioItemDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioResponseDto;
 import com.example.experfolio.domain.portfolio.repository.PortfolioRepository;
@@ -15,10 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 포트폴리오 서비스
@@ -414,6 +412,13 @@ public class PortfolioService {
                 .processingStatus(portfolio.getProcessingStatus())
                 .createdAt(portfolio.getCreatedAt())
                 .updatedAt(portfolio.getUpdatedAt())
+                .build();
+    }
+
+    public ExistPortfolioDto getExistPortfolio(String userId) {
+        return ExistPortfolioDto.builder()
+                .userId(userId)
+                .isExist(portfolioRepository.existsByUserId(userId))
                 .build();
     }
 }
