@@ -186,17 +186,22 @@ public class PortfolioService {
             throw new IllegalStateException("포트폴리오 아이템은 최대 5개까지 추가 가능합니다");
         }
 
-        // 파일 업로드 처리
+        // 파일 업로드 처리 (R2)
         List<Attachment> attachments = new ArrayList<>();
         if (files != null && files.length > 0) {
             try {
-                List<String> filePaths = fileStorageService.saveFiles(files, userId);
-                for (String filePath : filePaths) {
-                    Attachment attachment = Attachment.builder()
-                            .filePath(filePath)
-                            .extractionStatus("pending")
-                            .build();
-                    attachments.add(attachment);
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        String objectKey = fileStorageService.saveFile(file, userId);
+                        Attachment attachment = Attachment.builder()
+                                .objectKey(objectKey)
+                                .originalFilename(file.getOriginalFilename())
+                                .contentType(file.getContentType())
+                                .fileSize(file.getSize())
+                                .extractionStatus("pending")
+                                .build();
+                        attachments.add(attachment);
+                    }
                 }
             } catch (Exception e) {
                 log.error("File upload failed for userId: {}", userId, e);
@@ -256,7 +261,7 @@ public class PortfolioService {
         targetItem.setContent(itemDto.getContent());
         targetItem.setUpdatedAt(LocalDateTime.now());
 
-        // 파일 업로드 처리 (기존 파일에 추가)
+        // 파일 업로드 처리 (기존 파일에 추가, R2)
         if (files != null && files.length > 0) {
             List<Attachment> attachments = targetItem.getAttachments();
             if (attachments == null) {
@@ -265,13 +270,18 @@ public class PortfolioService {
             }
 
             try {
-                List<String> filePaths = fileStorageService.saveFiles(files, userId);
-                for (String filePath : filePaths) {
-                    Attachment attachment = Attachment.builder()
-                            .filePath(filePath)
-                            .extractionStatus("pending")
-                            .build();
-                    attachments.add(attachment);
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        String objectKey = fileStorageService.saveFile(file, userId);
+                        Attachment attachment = Attachment.builder()
+                                .objectKey(objectKey)
+                                .originalFilename(file.getOriginalFilename())
+                                .contentType(file.getContentType())
+                                .fileSize(file.getSize())
+                                .extractionStatus("pending")
+                                .build();
+                        attachments.add(attachment);
+                    }
                 }
             } catch (Exception e) {
                 log.error("File upload failed for userId: {}, itemId: {}", userId, itemId, e);
@@ -306,12 +316,12 @@ public class PortfolioService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("포트폴리오 아이템을 찾을 수 없습니다"));
 
-        // 첨부파일 삭제
+        // 첨부파일 삭제 (R2)
         if (targetItem.getAttachments() != null && !targetItem.getAttachments().isEmpty()) {
-            List<String> filePaths = targetItem.getAttachments().stream()
-                    .map(Attachment::getFilePath)
+            List<String> objectKeys = targetItem.getAttachments().stream()
+                    .map(Attachment::getObjectKey)
                     .toList();
-            fileStorageService.deleteFiles(filePaths);
+            fileStorageService.deleteFiles(objectKeys);
         }
 
         // 아이템 삭제
@@ -364,14 +374,14 @@ public class PortfolioService {
         Portfolio portfolio = portfolioRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
 
-        // 모든 첨부파일 삭제
+        // 모든 첨부파일 삭제 (R2)
         if (portfolio.getPortfolioItems() != null) {
             for (PortfolioItem item : portfolio.getPortfolioItems()) {
                 if (item.getAttachments() != null && !item.getAttachments().isEmpty()) {
-                    List<String> filePaths = item.getAttachments().stream()
-                            .map(Attachment::getFilePath)
+                    List<String> objectKeys = item.getAttachments().stream()
+                            .map(Attachment::getObjectKey)
                             .toList();
-                    fileStorageService.deleteFiles(filePaths);
+                    fileStorageService.deleteFiles(objectKeys);
                 }
             }
         }

@@ -59,6 +59,15 @@ ai:
       connect: ${AI_SERVER_TIMEOUT_CONNECT:5000}  # 5 seconds
       read: ${AI_SERVER_TIMEOUT_READ:30000}       # 30 seconds
 
+# Cloudflare R2 Configuration
+r2:
+  account-id: ${R2_ACCOUNT_ID}
+  access-key-id: ${R2_ACCESS_KEY_ID}
+  secret-access-key: ${R2_SECRET_ACCESS_KEY}
+  bucket-name: ${R2_BUCKET_NAME:experfolio-files}
+  endpoint: https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+  public-url: ${R2_PUBLIC_URL}
+
 # API Documentation
 springdoc:
   api-docs:
