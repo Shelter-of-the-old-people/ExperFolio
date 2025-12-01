@@ -1,15 +1,15 @@
 package com.example.experfolio.domain.portfolio.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,121 +17,159 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 파일 저장 서비스
- * MultipartFile을 MongoDB 서버 디스크에 직접 저장하고, 경로를 반환
+ * File Storage Service using Cloudflare R2
+ * Uploads files to R2 bucket and returns object keys
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileStorageService {
 
-    @Value("${file.upload.dir:uploads}")
-    private String uploadDir;
+    private final S3Client s3Client;
+
+    @Value("${r2.bucket-name}")
+    private String bucketName;
+
+    @Value("${r2.public-url}")
+    private String publicUrl;
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of(
-            "jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "txt"
+            "jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "txt", "hwp"
     );
 
     /**
-     * 단일 파일 저장
+     * Save single file to R2
+     * @return R2 object key (storage path)
      */
     public String saveFile(MultipartFile file, String userId) throws IOException {
         validateFile(file);
 
-        // 업로드 디렉토리 생성
-        Path uploadPath = createUploadDirectory(userId);
+        String objectKey = generateObjectKey(userId, file.getOriginalFilename());
 
-        // 고유한 파일명 생성
-        String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        String uniqueFilename = generateUniqueFilename(extension);
+        String contentType = file.getContentType();
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
 
-        // 파일 저장
-        Path targetPath = uploadPath.resolve(uniqueFilename);
-        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        PutObjectRequest putRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(contentType)
+                .contentLength(file.getSize())
+                .build();
 
-        log.info("File saved successfully: {}", targetPath);
+        s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        // 저장된 파일의 상대 경로 반환
-        return uploadPath.relativize(targetPath).toString();
+        log.info("File uploaded to R2: {}", objectKey);
+
+        return objectKey;
     }
 
     /**
-     * 다중 파일 저장
+     * Save multiple files to R2
      */
     public List<String> saveFiles(MultipartFile[] files, String userId) throws IOException {
-        List<String> filePaths = new ArrayList<>();
+        List<String> objectKeys = new ArrayList<>();
 
         if (files == null) {
-            return filePaths;
+            return objectKeys;
         }
 
         for (MultipartFile file : files) {
             if (!file.isEmpty()) {
-                String filePath = saveFile(file, userId);
-                filePaths.add(filePath);
+                String objectKey = saveFile(file, userId);
+                objectKeys.add(objectKey);
             }
         }
 
-        return filePaths;
+        return objectKeys;
     }
 
     /**
-     * 파일 삭제
+     * Delete file from R2
      */
-    public void deleteFile(String filePath) {
+    public void deleteFile(String objectKey) {
         try {
-            Path path = Paths.get(uploadDir, filePath);
-            Files.deleteIfExists(path);
-            log.info("File deleted successfully: {}", path);
-        } catch (IOException e) {
-            log.error("Failed to delete file: {}", filePath, e);
-            throw new RuntimeException("파일 삭제에 실패했습니다", e);
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            s3Client.deleteObject(deleteRequest);
+            log.info("File deleted from R2: {}", objectKey);
+        } catch (S3Exception e) {
+            log.error("Failed to delete file from R2: {}", objectKey, e);
+            throw new RuntimeException("File deletion failed", e);
         }
     }
 
     /**
-     * 다중 파일 삭제
+     * Delete multiple files from R2 (batch delete)
      */
-    public void deleteFiles(List<String> filePaths) {
-        if (filePaths == null || filePaths.isEmpty()) {
+    public void deleteFiles(List<String> objectKeys) {
+        if (objectKeys == null || objectKeys.isEmpty()) {
             return;
         }
 
-        for (String filePath : filePaths) {
-            deleteFile(filePath);
+        List<ObjectIdentifier> toDelete = objectKeys.stream()
+                .map(key -> ObjectIdentifier.builder().key(key).build())
+                .toList();
+
+        DeleteObjectsRequest deleteRequest = DeleteObjectsRequest.builder()
+                .bucket(bucketName)
+                .delete(Delete.builder().objects(toDelete).build())
+                .build();
+
+        try {
+            s3Client.deleteObjects(deleteRequest);
+            log.info("Files deleted from R2: {} files", objectKeys.size());
+        } catch (S3Exception e) {
+            log.error("Failed to delete files from R2", e);
+            throw new RuntimeException("File deletion failed", e);
         }
     }
 
     /**
-     * 업로드 디렉토리 생성
-     * 구조: /var/data/experfolio/uploads/{userId}/{yyyy-MM-dd}/
+     * Get public URL for file
      */
-    private Path createUploadDirectory(String userId) throws IOException {
+    public String getPublicUrl(String objectKey) {
+        return publicUrl + "/" + objectKey;
+    }
+
+    /**
+     * Check if file exists in R2
+     */
+    public boolean fileExists(String objectKey) {
+        try {
+            HeadObjectRequest headRequest = HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            s3Client.headObject(headRequest);
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Generate unique object key
+     * Format: portfolios/{userId}/{yyyy-MM-dd}/{uuid}_{timestamp}.{extension}
+     */
+    private String generateObjectKey(String userId, String originalFilename) {
         String dateFolder = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        Path uploadPath = Paths.get(uploadDir, userId, dateFolder);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-            log.info("Upload directory created: {}", uploadPath);
-        }
-
-        return uploadPath;
-    }
-
-    /**
-     * 고유한 파일명 생성
-     * 형식: {UUID}_{timestamp}.{extension}
-     */
-    private String generateUniqueFilename(String extension) {
+        String extension = getFileExtension(originalFilename);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String uuid = UUID.randomUUID().toString().substring(0, 8);
-        return String.format("%s_%s.%s", uuid, timestamp, extension);
+
+        return String.format("portfolios/%s/%s/%s_%s.%s", userId, dateFolder, uuid, timestamp, extension);
     }
 
     /**
-     * 파일 확장자 추출
+     * Extract file extension
      */
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
@@ -141,46 +179,28 @@ public class FileStorageService {
     }
 
     /**
-     * 파일 유효성 검증
+     * Validate file
      */
     private void validateFile(MultipartFile file) {
-        // 파일이 비어있는지 확인
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("업로드된 파일이 비어있습니다");
+            throw new IllegalArgumentException("Uploaded file is empty");
         }
 
-        // 파일 크기 확인
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException(
-                    String.format("파일 크기가 너무 큽니다. 최대 크기: %dMB", MAX_FILE_SIZE / (1024 * 1024))
+                    String.format("File size too large. Max size: %dMB", MAX_FILE_SIZE / (1024 * 1024))
             );
         }
 
-        // 파일 확장자 확인
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
 
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new IllegalArgumentException(
-                    String.format("지원하지 않는 파일 형식입니다. 지원 형식: %s", String.join(", ", ALLOWED_EXTENSIONS))
+                    String.format("Unsupported file format. Supported formats: %s", String.join(", ", ALLOWED_EXTENSIONS))
             );
         }
 
         log.info("File validation passed: {} ({}bytes)", originalFilename, file.getSize());
-    }
-
-    /**
-     * 파일 전체 경로 반환
-     */
-    public String getFullPath(String relativePath) {
-        return Paths.get(uploadDir, relativePath).toString();
-    }
-
-    /**
-     * 파일 존재 여부 확인
-     */
-    public boolean fileExists(String filePath) {
-        Path path = Paths.get(uploadDir, filePath);
-        return Files.exists(path);
     }
 }

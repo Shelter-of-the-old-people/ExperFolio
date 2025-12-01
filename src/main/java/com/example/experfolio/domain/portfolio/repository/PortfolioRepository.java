@@ -4,6 +4,7 @@ import com.example.experfolio.domain.portfolio.document.Portfolio;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -26,4 +27,9 @@ public interface PortfolioRepository extends MongoRepository<Portfolio, String> 
      * userId로 포트폴리오 삭제
      */
     void deleteByUserId(String userId);
+
+    /**
+     * 여러 userId로 포트폴리오 목록 조회 (배치 조회)
+     */
+    List<Portfolio> findByUserIdIn(List<String> userIds);
 }

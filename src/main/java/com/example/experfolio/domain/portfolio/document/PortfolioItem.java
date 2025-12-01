@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class PortfolioItem {
     private String id;
     private int order;
-    private String type; // "project", "activity", "research", "other"
+    private String type;
     private String title;
     private String content;
     private List<Attachment> attachments;

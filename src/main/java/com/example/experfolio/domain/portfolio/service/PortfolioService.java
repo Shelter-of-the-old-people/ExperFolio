@@ -2,11 +2,15 @@ package com.example.experfolio.domain.portfolio.service;
 
 import com.example.experfolio.domain.portfolio.document.*;
 import com.example.experfolio.domain.portfolio.dto.BasicInfoDto;
+import com.example.experfolio.domain.portfolio.dto.ExistPortfolioDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioItemDto;
 import com.example.experfolio.domain.portfolio.dto.PortfolioResponseDto;
 import com.example.experfolio.domain.portfolio.repository.PortfolioRepository;
 import com.example.experfolio.domain.user.entity.JobSeekerProfile;
+import com.example.experfolio.domain.user.entity.User;
+import com.example.experfolio.domain.user.entity.UserRole;
 import com.example.experfolio.domain.user.repository.JobSeekerProfileRepository;
+import com.example.experfolio.domain.user.repository.UserRepository;
 import com.example.experfolio.domain.user.service.JobSeekerProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 포트폴리오 서비스
@@ -33,6 +34,7 @@ public class PortfolioService {
     private final FileStorageService fileStorageService;
     private final JobSeekerProfileRepository jobSeekerProfileRepository;
     private final JobSeekerProfileService jobSeekerProfileService;
+    private final UserRepository userRepository;
 
     private static final int MAX_PORTFOLIO_ITEMS = 5;
 
@@ -188,17 +190,22 @@ public class PortfolioService {
             throw new IllegalStateException("포트폴리오 아이템은 최대 5개까지 추가 가능합니다");
         }
 
-        // 파일 업로드 처리
+        // 파일 업로드 처리 (R2)
         List<Attachment> attachments = new ArrayList<>();
         if (files != null && files.length > 0) {
             try {
-                List<String> filePaths = fileStorageService.saveFiles(files, userId);
-                for (String filePath : filePaths) {
-                    Attachment attachment = Attachment.builder()
-                            .filePath(filePath)
-                            .extractionStatus("pending")
-                            .build();
-                    attachments.add(attachment);
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        String objectKey = fileStorageService.saveFile(file, userId);
+                        Attachment attachment = Attachment.builder()
+                                .objectKey(objectKey)
+                                .originalFilename(file.getOriginalFilename())
+                                .contentType(file.getContentType())
+                                .fileSize(file.getSize())
+                                .extractionStatus("pending")
+                                .build();
+                        attachments.add(attachment);
+                    }
                 }
             } catch (Exception e) {
                 log.error("File upload failed for userId: {}", userId, e);
@@ -258,7 +265,7 @@ public class PortfolioService {
         targetItem.setContent(itemDto.getContent());
         targetItem.setUpdatedAt(LocalDateTime.now());
 
-        // 파일 업로드 처리 (기존 파일에 추가)
+        // 파일 업로드 처리 (기존 파일에 추가, R2)
         if (files != null && files.length > 0) {
             List<Attachment> attachments = targetItem.getAttachments();
             if (attachments == null) {
@@ -267,13 +274,18 @@ public class PortfolioService {
             }
 
             try {
-                List<String> filePaths = fileStorageService.saveFiles(files, userId);
-                for (String filePath : filePaths) {
-                    Attachment attachment = Attachment.builder()
-                            .filePath(filePath)
-                            .extractionStatus("pending")
-                            .build();
-                    attachments.add(attachment);
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        String objectKey = fileStorageService.saveFile(file, userId);
+                        Attachment attachment = Attachment.builder()
+                                .objectKey(objectKey)
+                                .originalFilename(file.getOriginalFilename())
+                                .contentType(file.getContentType())
+                                .fileSize(file.getSize())
+                                .extractionStatus("failed")
+                                .build();
+                        attachments.add(attachment);
+                    }
                 }
             } catch (Exception e) {
                 log.error("File upload failed for userId: {}, itemId: {}", userId, itemId, e);
@@ -308,12 +320,12 @@ public class PortfolioService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("포트폴리오 아이템을 찾을 수 없습니다"));
 
-        // 첨부파일 삭제
+        // 첨부파일 삭제 (R2)
         if (targetItem.getAttachments() != null && !targetItem.getAttachments().isEmpty()) {
-            List<String> filePaths = targetItem.getAttachments().stream()
-                    .map(Attachment::getFilePath)
+            List<String> objectKeys = targetItem.getAttachments().stream()
+                    .map(Attachment::getObjectKey)
                     .toList();
-            fileStorageService.deleteFiles(filePaths);
+            fileStorageService.deleteFiles(objectKeys);
         }
 
         // 아이템 삭제
@@ -366,14 +378,14 @@ public class PortfolioService {
         Portfolio portfolio = portfolioRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
 
-        // 모든 첨부파일 삭제
+        // 모든 첨부파일 삭제 (R2)
         if (portfolio.getPortfolioItems() != null) {
             for (PortfolioItem item : portfolio.getPortfolioItems()) {
                 if (item.getAttachments() != null && !item.getAttachments().isEmpty()) {
-                    List<String> filePaths = item.getAttachments().stream()
-                            .map(Attachment::getFilePath)
+                    List<String> objectKeys = item.getAttachments().stream()
+                            .map(Attachment::getObjectKey)
                             .toList();
-                    fileStorageService.deleteFiles(filePaths);
+                    fileStorageService.deleteFiles(objectKeys);
                 }
             }
         }
@@ -415,5 +427,107 @@ public class PortfolioService {
                 .createdAt(portfolio.getCreatedAt())
                 .updatedAt(portfolio.getUpdatedAt())
                 .build();
+    }
+
+    public ExistPortfolioDto getExistPortfolio(String userId) {
+        return ExistPortfolioDto.builder()
+                .userId(userId)
+                .isExist(portfolioRepository.existsByUserId(userId))
+                .build();
+    }
+
+    /**
+     * 특정 사용자의 포트폴리오 조회 (리크루터용)
+     * Actor: RECRUITER
+     */
+    @Transactional(readOnly = true)
+    public PortfolioResponseDto getPortfolioByUserId(String userId) {
+        log.info("Fetching portfolio for userId: {} (recruiter access)", userId);
+
+        // 1. 사용자 존재 여부 및 유효성 확인
+        User user;
+//        try {
+//            UUID userUuid = UUID.fromString(userId);
+//            user = userRepository.findById(userUuid)
+//                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+//        } catch (IllegalArgumentException e) {
+//            // UUID 형식이 아니거나 사용자를 찾을 수 없는 경우
+//            throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
+//        }
+
+        // 2. 삭제된 사용자인지 확인
+//        if (user.isDeleted()) {
+//            throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
+//        }
+
+        // 3. 구직자인지 확인 (리크루터의 포트폴리오는 조회 불가)
+//        if (user.getRole() != UserRole.JOB_SEEKER) {
+//            throw new IllegalArgumentException("해당 사용자의 포트폴리오를 조회할 수 없습니다");
+//        }
+
+        // 4. 포트폴리오 조회
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
+
+        // 5. portfolioItems를 order 순으로 정렬
+        if (portfolio.getPortfolioItems() != null) {
+            portfolio.getPortfolioItems().sort(Comparator.comparingInt(PortfolioItem::getOrder));
+        }
+
+        log.info("Portfolio retrieved for userId: {} by recruiter", userId);
+        return convertToResponseDto(portfolio);
+    }
+
+    /**
+     * 포트폴리오 아이템의 특정 첨부파일 삭제
+     * Actor: JOB_SEEKER
+     */
+    @Transactional
+    public void deleteAttachment(String userId, String itemId, String objectKey) {
+        log.info("Deleting attachment {} from item {} for userId: {}", objectKey, itemId, userId);
+
+        // 포트폴리오 조회
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다"));
+
+        // 아이템 찾기
+        PortfolioItem targetItem = portfolio.getPortfolioItems().stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오 아이템을 찾을 수 없습니다"));
+
+        // 첨부파일 목록에서 해당 objectKey를 가진 파일 찾기
+        List<Attachment> attachments = targetItem.getAttachments();
+        if (attachments == null || attachments.isEmpty()) {
+            throw new IllegalArgumentException("첨부파일이 존재하지 않습니다");
+        }
+
+        boolean removed = attachments.removeIf(attachment ->
+            attachment.getObjectKey().equals(objectKey)
+        );
+
+        if (!removed) {
+            throw new IllegalArgumentException("첨부파일을 찾을 수 없습니다");
+        }
+
+        // R2에서 실제 파일 삭제
+        try {
+            fileStorageService.deleteFile(objectKey);
+            log.info("File deleted from R2: {}", objectKey);
+        } catch (Exception e) {
+            log.error("Failed to delete file from R2: {}", objectKey, e);
+            // MongoDB는 이미 업데이트되었으므로 경고만 로깅
+            log.warn("Attachment metadata removed from MongoDB but R2 deletion failed");
+        }
+
+        // Portfolio 업데이트
+        targetItem.setUpdatedAt(LocalDateTime.now());
+        portfolio.setUpdatedAt(LocalDateTime.now());
+
+        // 재임베딩 플래그 설정
+        portfolio.getProcessingStatus().setNeedsEmbedding(true);
+
+        portfolioRepository.save(portfolio);
+        log.info("Attachment deleted successfully: {}", objectKey);
     }
 }
