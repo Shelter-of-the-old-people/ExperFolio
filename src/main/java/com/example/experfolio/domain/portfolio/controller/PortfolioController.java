@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -164,6 +165,37 @@ public class PortfolioController {
     ) {
         String userId = userDetails.getUsername(); // UUID 문자열
         portfolioService.deletePortfolio(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 특정 사용자의 포트폴리오 조회
+     * Actor: RECRUITER
+     */
+    @Operation(summary = "사용자 포트폴리오 조회", description = "리크루터가 특정 사용자의 포트폴리오를 조회합니다.")
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<PortfolioResponseDto> getPortfolioByUserId(
+            @PathVariable String userId,
+            @AuthenticationPrincipal UserDetails currentUser
+    ) {
+        PortfolioResponseDto response = portfolioService.getPortfolioByUserId(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 포트폴리오 아이템의 특정 첨부파일 삭제
+     * Actor: JOB_SEEKER
+     */
+    @Operation(summary = "첨부파일 삭제", description = "포트폴리오 아이템의 특정 첨부파일을 삭제합니다.")
+    @DeleteMapping("/items/{itemId}/attachments")
+    public ResponseEntity<?> deleteAttachment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String itemId,
+            @RequestParam String objectKey
+    ) {
+        String userId = userDetails.getUsername(); // UUID 문자열
+        portfolioService.deleteAttachment(userId, itemId, objectKey);
         return ResponseEntity.noContent().build();
     }
 }

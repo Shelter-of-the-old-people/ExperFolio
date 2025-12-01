@@ -119,9 +119,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(
             UnauthorizedException ex, WebRequest request) {
-        
+
         log.error("Unauthorized error occurred: {}", ex.getMessage());
-        
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
@@ -132,12 +132,50 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
+    /**
+     * 즐겨찾기 중복 예외 처리
+     */
+    @ExceptionHandler(com.example.experfolio.domain.favorite.exception.DuplicateFavoriteException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateFavoriteException(
+            com.example.experfolio.domain.favorite.exception.DuplicateFavoriteException ex, WebRequest request) {
+
+        log.error("Duplicate favorite error occurred: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Duplicate Favorite")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * 즐겨찾기 없음 예외 처리
+     */
+    @ExceptionHandler(com.example.experfolio.domain.favorite.exception.FavoriteNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(
+            com.example.experfolio.domain.favorite.exception.FavoriteNotFoundException ex, WebRequest request) {
+
+        log.error("Favorite not found error occurred: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Favorite Not Found")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
-        
+
         log.error("Unexpected error occurred: ", ex);
-        
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())

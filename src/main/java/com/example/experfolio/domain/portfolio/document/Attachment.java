@@ -18,5 +18,5 @@ public class Attachment {
     private String originalFilename;    // Original filename
     private String contentType;         // MIME type
     private Long fileSize;              // File size in bytes
-    private String extractionStatus;    // OCR extraction status: pending, completed, failed
+    private String extractionStatus;
 }
