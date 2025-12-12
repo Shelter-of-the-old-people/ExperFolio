@@ -99,3 +99,6 @@ api-keys/
 ### Claude code ###
 #CLAUDE.md
 #Claude_md_file_update.md
+
+/.claude
+/doc
